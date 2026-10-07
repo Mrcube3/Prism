@@ -1,0 +1,47 @@
+{
+  "label": "HYPOTHETICAL ACCOUNT",
+  "note": "Quantities are hypothetical. Prices, collateral tiers and MMR tiers are real Bitget responses.",
+  "recognized_price_note": "UNVERIFIED_ASSUMPTION: rToken last price at build time stands in for Bitget's recognized collateral price.",
+  "built_at": "2026-10-07T00:55:37.064614+00:00",
+  "holdings": [
+    {
+      "coin": "USDT",
+      "quantity": "12000",
+      "price": "1",
+      "price_source": "stablecoin at par (assumption)"
+    },
+    {
+      "coin": "RNVDA",
+      "quantity": "60",
+      "price": "240.15",
+      "price_source": "bitget:/api/v3/market/tickers?category=SPOT&symbol=RNVDAUSDT lastPrice ts=1791334532042"
+    },
+    {
+      "coin": "RSPY",
+      "quantity": "10",
+      "price": "780.09",
+      "price_source": "bitget:/api/v3/market/tickers?category=SPOT&symbol=RSPYUSDT lastPrice ts=1791334532649"
+    },
+    {
+      "coin": "RCOIN",
+      "quantity": "25",
+      "price": "186.48",
+      "price_source": "bitget:/api/v3/market/tickers?category=SPOT&symbol=RCOINUSDT lastPrice ts=1791334533910"
+    },
+    {
+      "coin": "RMSTR",
+      "quantity": "30",
+      "price": "164.73",
+      "price_source": "bitget:/api/v3/market/tickers?category=SPOT&symbol=RMSTRUSDT lastPrice ts=1791334534201"
+    }
+  ],
+  "perps": [
+    {
+      "symbol": "BTCUSDT",
+      "direction": 1,
+      "size": "3",
+      "mark_price": "85493.2",
+      "mark_source": "bitget:/api/v3/market/tickers?category=USDT-FUTURES&symbol=BTCUSDT markPrice ts=1791334535616"
+    }
+  ]
+}
