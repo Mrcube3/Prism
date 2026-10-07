@@ -1,0 +1,10 @@
+# secrets and local state
+.env*
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# raw provider payloads and captured market data can contain private account data
+/data/raw/
+/data/capture/
