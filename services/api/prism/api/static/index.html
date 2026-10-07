@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PRISM — Mission Control</title>
+<style>
+:root{color-scheme:dark;--bg:#0a1016;--panel:#101922;--raised:#16222d;--line:#293642;--ink:#edf3f6;--dim:#a5b4c3;--quiet:#8091a2;--mint:#91dac5;--blue:#9bbfdf;--amber:#e0be80;--red:#ee969f;--safe:#95d4b6;--mono:"Cascadia Code",Consolas,monospace;--sans:"Segoe UI",Inter,system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.45 var(--sans)}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:wait;opacity:.55}button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--mint);outline-offset:3px}[hidden]{display:none!important}.num{font-family:var(--mono);font-variant-numeric:tabular-nums}.quiet{color:var(--quiet)}.dim{color:var(--dim)}.SAFE{color:var(--safe)}.WATCH{color:var(--amber)}.WARNING{color:#ecad7e}.BREACH,.err{color:var(--red)}
+.top{height:60px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px;padding:0 max(20px,calc((100vw - 1600px)/2));background:#0d151d}.brand{display:flex;align-items:center;gap:10px;margin-right:16px;font-size:17px;letter-spacing:.18em;font-weight:650}.brand svg{width:25px;height:28px;color:var(--mint)}.brand small{display:block;font-size:8px;letter-spacing:.1em;font-weight:400;color:var(--quiet)}.seg{display:flex;gap:3px;background:#080e14;border:1px solid var(--line);padding:3px;border-radius:6px}.seg button{border:0;color:var(--dim);background:none;border-radius:3px;padding:6px 12px;font-size:11px}.seg button[aria-pressed=true]{background:#293b47;color:var(--ink)}.badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:4px;padding:3px 7px;font-size:10px;white-space:nowrap;color:var(--dim)}.hyp{color:var(--amber);background:#2b251a;border-color:#59492e}.demo{color:var(--blue)}.live{color:var(--safe)}.grow{flex:1}.top-info{font-size:11px;color:var(--dim)}.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--quiet);margin-right:5px}.dot.on{background:var(--safe)}.ghost{border:1px solid var(--line);background:transparent;color:var(--dim);border-radius:5px;padding:6px 10px;font-size:11px}.ghost:hover{background:var(--raised);color:var(--ink)}
+.terminal{width:100%;max-width:1600px;margin:auto;padding:15px 20px 98px;display:grid;gap:12px}.headline{display:flex;align-items:center;justify-content:space-between;gap:15px}.headline h1{font-size:23px;font-weight:500;letter-spacing:-.025em;margin:0}.breadcrumb{font:10px var(--mono);letter-spacing:.08em;color:var(--mint);margin-top:5px}.headline-note{font-size:11px;color:var(--dim);text-align:right;max-width:540px}.causal{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));border:1px solid var(--line);border-radius:5px;background:#0e171f;overflow:hidden}.causal div{padding:8px 10px;position:relative;border-right:1px solid var(--line)}.causal div:last-child{border-right:0}.causal b{display:block;font-size:11px;font-weight:500}.causal small{display:block;font-size:9px;color:var(--quiet);margin-top:3px}.causal div:not(:last-child)::after{content:"›";position:absolute;right:-4px;top:11px;color:var(--mint);background:#0e171f;z-index:1}.causal .concept{color:var(--amber)}
+.top-row{display:grid;grid-template-columns:210px minmax(0,1.3fr) minmax(0,1fr);gap:12px}.decision-row{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:12px}.panel{border:1px solid var(--line);border-radius:7px;background:var(--panel);min-width:0;padding:14px}.ph{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.ph h2{font-size:11px;letter-spacing:.075em;margin:0;font-weight:600}.ph .tiny{font-size:9px;color:var(--quiet)}.step{color:var(--mint);font:10px var(--mono);margin-right:7px}.subhead{font-size:10px;color:var(--dim);margin:0 0 10px}.watchlist{display:grid;gap:5px}.watch{width:100%;text-align:left;background:#101922;border:1px solid transparent;border-radius:5px;color:var(--ink);padding:9px 8px}.watch:hover{background:var(--raised)}.watch.selected{border-color:#44766a;background:#182a2b}.watch-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600}.watch small{font-size:9px;color:var(--quiet)}.watch-state{display:flex;justify-content:space-between;color:var(--dim);font-size:9px;margin:5px 0}.watch-lcg{display:flex;justify-content:space-between;font-size:10px;border-top:1px solid #ffffff08;padding-top:5px}.watch-note{font-size:9px;color:var(--quiet);margin:10px 0 0}.position{margin-top:12px;border-top:1px solid var(--line);padding-top:10px;font-size:10px}.position b{display:block;color:var(--blue);margin:3px 0}
+.price-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.symbol{font-size:18px;line-height:1.1;font-weight:600}.symbol small{display:block;font-size:10px;font-weight:400;color:var(--dim);margin-top:5px}.quote{font:25px/1.1 var(--mono);letter-spacing:-.04em;text-align:right}.quote small{display:block;font:9px var(--sans);color:var(--quiet);margin-top:5px}.price-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:11px 0}.price-facts div{min-width:0}.price-facts small{display:block;font-size:9px;color:var(--quiet)}.price-facts b{display:block;font-size:11px;font-weight:500;margin-top:3px}.chart{height:138px;background:#0c141c;border:1px solid #22313c;border-radius:4px;position:relative;overflow:hidden}.chart svg{display:block;width:100%;height:100%}.chart-empty{display:grid;place-items:center;height:100%;color:var(--quiet);font-size:11px;text-align:center;padding:15px}.chart-label{display:flex;gap:15px;align-items:center;flex-wrap:wrap;font-size:9px;color:var(--dim);margin:7px 0}.chart-label i{width:16px;height:2px;background:var(--mint);display:inline-block;vertical-align:3px;margin-right:5px}.chart-label .ref{background:none;border-top:2px dashed var(--blue)}.chart-source{font-size:9px;color:var(--quiet);margin-left:auto}.evidence{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding-top:8px;border-top:1px solid var(--line)}.evidence small{display:block;font-size:9px;color:var(--quiet)}.evidence b{font-size:10px;font-weight:500}.shadow-band{margin-top:9px;padding:7px 9px;background:#17242c;border-left:2px solid var(--mint);font-size:10px;display:flex;justify-content:space-between;gap:8px}.why{font-size:10px;color:var(--dim);margin:8px 0 0}.why b{color:var(--mint);font-weight:500}
+.hero-risk{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}.hero-risk div{padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:#131f29}.hero-risk small{font-size:9px;color:var(--dim)}.hero-risk b{display:block;font:23px var(--mono);letter-spacing:-.05em;margin-top:3px}.ledger{width:100%;border-collapse:collapse;font-size:11px}.ledger th{font-size:9px;color:var(--dim);font-weight:500;padding:5px 5px 7px;text-align:right}.ledger th:first-child{text-align:left}.ledger th small{display:block;font-size:8px;color:var(--quiet);font-weight:400}.ledger td{padding:6px 5px;text-align:right;border-top:1px solid #24303a;white-space:nowrap}.ledger td:first-child{font:10px var(--sans);text-align:left;color:var(--dim)}.ledger th:nth-child(2),.ledger td:nth-child(2){background:#1a2935}.ledger td:last-child{background:#251e27}.ledger .ratio td{font-size:13px;padding-top:8px;padding-bottom:8px}.insight{padding:8px 10px;border:1px solid #55343a;background:#271d25;border-radius:4px;font-size:10px;margin-top:9px}.insight strong{color:var(--red);font-size:10px;font-weight:600}.insight p{margin:3px 0 0;color:var(--dim);line-height:1.5}.model-note{font-size:9px;color:var(--quiet);margin:7px 0 0}
+.frontier-body{display:grid;grid-template-columns:minmax(0,1fr) 175px;gap:14px}.hm{display:grid;grid-template-columns:32px repeat(7,minmax(0,1fr));gap:3px}.ax{font:9px var(--mono);color:var(--quiet);text-align:center;display:grid;place-items:center}.c{border:1px solid #ffffff07;border-radius:3px;padding:0;font:10px var(--mono);min-height:25px;color:var(--ink)}.c.SAFE{background:#1c3b32;color:#a9d8c4}.c.WATCH{background:#3b3522;color:#e4ce96}.c.WARNING{background:#483123;color:#f0bc94}.c.BREACH{background:#492731;color:#f2a7b1}.c.bz{background-image:repeating-linear-gradient(135deg,#ee969f22 0 3px,transparent 3px 7px);border-color:var(--red)}.c:hover{filter:brightness(1.2)}.c.sel{outline:2px solid var(--mint);outline-offset:1px}.axis{font-size:9px;color:var(--quiet);display:flex;justify-content:space-between;margin:5px 0 0 35px}.legend{font-size:9px;color:var(--dim);display:flex;gap:10px;flex-wrap:wrap;margin-top:9px}.legend i{display:inline-block;width:7px;height:7px;border-radius:1px;vertical-align:0;margin-right:4px}.cell-detail{background:#0c151d;border:1px solid var(--line);padding:10px;border-radius:4px;font-size:10px}.cell-detail h3{font-size:10px;font-weight:500;margin:0 0 5px;color:var(--dim)}.cell-detail .big{font:19px var(--mono);margin-bottom:8px}.cell-detail dl{margin:8px 0}.cell-detail dt{color:var(--quiet);font-size:9px}.cell-detail dd{margin:1px 0 5px;font:11px var(--mono)}.cell-detail .contributors{font-size:9px;color:var(--dim)}.bz-key{font-size:10px;color:var(--red);border-top:1px solid var(--line);margin-top:8px;padding-top:7px}.proposal{margin-bottom:10px;padding:8px 10px;border:1px solid var(--line);background:#131f2a;border-radius:4px;font-size:11px;color:var(--dim)}.trade-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.trade-stage{border-left:2px solid var(--line);padding:5px 7px;min-width:0}.trade-stage:last-child{border-color:var(--red)}.trade-stage small{display:block;font-size:9px;color:var(--quiet)}.trade-stage b{display:block;font:21px var(--mono);letter-spacing:-.06em;margin:5px 0;overflow-wrap:anywhere}.trade-stage span{font-size:9px;color:var(--dim)}.pretrade-note{padding:8px 10px;background:#17252b;border-left:2px solid var(--mint);font-size:10px;color:var(--dim);margin-top:11px}.pretrade-warnings{margin-top:8px;font-size:10px;color:var(--red)}.pretrade-footer{display:flex;align-items:center;justify-content:space-between;font-size:9px;color:var(--quiet);margin-top:12px}.primary{color:#102a24;background:var(--mint);border:0;border-radius:4px;padding:7px 11px;font-weight:600;font-size:10px}.primary:hover{background:#b0e8d7}
+.repairs{padding:11px 14px}.repair-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.repair{border-left:2px solid var(--line);background:#131f29;padding:8px 10px;min-width:0}.repair.best{border-color:var(--mint);background:#172923}.repair-head{display:flex;justify-content:space-between;gap:5px;font-size:11px;font-weight:500}.repair-tag{font-size:8px;color:var(--mint);white-space:nowrap}.repair-values{display:flex;justify-content:space-between;gap:8px;margin:6px 0;font:18px var(--mono)}.repair small{font-size:9px;color:var(--quiet);display:block}.repair-desc{font-size:9px;color:var(--dim);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-top:4px}.repair-foot{font-size:9px;color:var(--quiet);margin-top:6px}.terminal-foot{font-size:9px;color:var(--quiet);display:flex;justify-content:space-between}.terminal-foot button{padding:0;border:0;background:none;color:var(--dim);font-size:9px}
+.command{position:fixed;bottom:0;left:0;right:0;background:#0d161e;border-top:1px solid var(--line);z-index:10}.command form{max-width:1600px;margin:auto;display:flex;gap:12px;align-items:center;padding:12px 20px 5px}.command label{font-size:12px;font-weight:600;white-space:nowrap;color:var(--mint)}.command input{flex:1;min-width:0;background:#18232e;border:1px solid #3a4c5a;border-radius:5px;color:var(--ink);font-size:12px;padding:10px 12px}.command button{background:var(--mint);color:#0c2a21;border:0;border-radius:5px;padding:11px 20px;font-size:12px;font-weight:600}.command-note{max-width:1600px;margin:auto;padding:0 20px 8px 118px;font-size:9px;color:var(--quiet)}
+.loading{color:var(--dim);padding:15px 0;font-size:11px}.spin{display:inline-block;width:10px;height:10px;border:1px solid var(--line);border-top-color:var(--mint);border-radius:50%;margin-right:6px;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+dialog{color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;width:min(560px,95vw);max-height:85vh;padding:22px}dialog::backdrop{background:#02070cbf}.drawer{margin:0 0 0 auto;height:100vh;max-height:100vh;border-radius:0;top:0;bottom:0;overflow:auto}.drawer h2{font-size:17px;margin:0}.drawer p,.drawer li{color:var(--dim);font-size:12px;line-height:1.7}.drawer ul{padding-left:18px}.drawer pre{white-space:pre-wrap;overflow-wrap:anywhere;font:10px/1.7 var(--mono);color:var(--quiet)}.scroll{overflow:auto}.error-banner{background:#2b1e26;border:1px solid #59343c;padding:9px 12px;font-size:11px;color:var(--red);border-radius:4px}
+@media(min-width:1400px) and (min-height:920px){.terminal{gap:15px;padding-top:20px}.chart{height:163px}.panel{padding:16px}.c{min-height:29px}.price-facts{margin:14px 0}.quote{font-size:29px}.ledger td{padding:8px 5px}.hero-risk b{font-size:26px}.repair{padding:11px 12px}}
+@media(max-width:1200px){.top-row{grid-template-columns:180px minmax(0,1fr) minmax(0,1fr)}.terminal{padding:12px 16px 100px}.panel{padding:11px}.frontier-body{grid-template-columns:minmax(0,1fr) 145px}.quote{font-size:22px}.trade-stage b{font-size:18px}.causal div{padding:7px}.causal b{font-size:10px}.top{gap:10px;padding:0 16px}.brand{margin-right:5px}.headline-note{max-width:400px}.ledger{font-size:10px}.ledger td{padding:6px 3px}}
+@media(max-width:950px){.top-row{grid-template-columns:170px minmax(0,1fr)}.account-panel{grid-column:1/-1}.decision-row{grid-template-columns:1fr}.causal{grid-template-columns:repeat(4,1fr)}.causal div:nth-child(-n+4){border-bottom:1px solid var(--line)}.top-info{display:none}.headline-note{display:none}.repair-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.top{height:auto;padding:10px 12px;flex-wrap:wrap;gap:9px}.brand{font-size:14px;margin-right:auto}.top .grow{display:none}.top .ghost{margin-left:auto}.badge{font-size:8px}.terminal{padding:12px 12px 135px}.headline h1{font-size:20px}.breadcrumb{font-size:8px}.causal b{font-size:9px}.causal small{font-size:8px}.causal div{padding:7px 5px}.top-row{grid-template-columns:1fr}.watchlist{grid-template-columns:repeat(2,minmax(0,1fr))}.watch-note,.position{display:none}.price-facts{gap:5px}.price-facts b{font-size:10px}.price-facts small{font-size:8px}.frontier-body{grid-template-columns:1fr}.cell-detail dl{display:flex;gap:12px;flex-wrap:wrap}.repair-grid{gap:7px}.repair-values{font-size:15px}.trade-stage b{font-size:16px}.command form{flex-wrap:wrap;padding:10px 12px 5px;gap:7px}.command label{width:100%;font-size:10px}.command input{font-size:11px;padding:9px}.command button{padding:10px;font-size:10px}.command-note{padding:0 12px 8px;font-size:8px}.terminal-foot{gap:10px}.evidence{gap:4px}.evidence b{font-size:9px}.ph h2{font-size:10px}.ledger th small{font-size:7px}.chart-source{margin-left:0}}
+@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+/* Desktop density: all primary surfaces remain in the same visible workspace. */
+@media(min-width:1201px){
+ .top{height:52px}.terminal{padding-top:12px;padding-bottom:88px;gap:10px}.headline h1{font-size:23px}.headline-note{font-size:11px}.breadcrumb{margin-top:3px}
+ .causal div{padding:6px 9px}.causal small{margin-top:2px}.panel{padding:11px 13px}.ph{margin-bottom:8px}.ph h2{font-size:12px}.ph .tiny{font-size:10px}
+ .watch{padding:6px 7px;line-height:1.2}.watch-top{font-size:12px}.watch-state{font-size:9px;margin:3px 0}.watch-lcg{padding-top:3px;line-height:1.2}.watch-note{font-size:9px;margin-top:7px;line-height:1.3}.position{margin-top:7px;padding-top:6px;line-height:1.3}.position b{margin:2px 0}
+ .price-facts{margin:9px 0;gap:8px}.price-facts small{font-size:10px}.price-facts b{font-size:12px;margin-top:2px}.quote{font-size:29px}.symbol{font-size:20px}.chart{height:108px}.chart-label{margin:5px 0;font-size:10px}.chart-source{font-size:9px}.evidence{padding-top:5px}.evidence small{font-size:9px}.evidence b{font-size:10px}.shadow-band{margin-top:6px;padding:5px 8px}.why{margin-top:6px;font-size:10px;line-height:1.35}
+ .hero-risk{gap:10px;margin-bottom:6px}.hero-risk div{padding:5px 8px}.hero-risk b{font-size:25px;margin-top:0}.hero-risk small{font-size:9px}.ledger{font-size:12px}.ledger th{font-size:9px;padding:4px 4px}.ledger td{padding:3px 4px;line-height:1.25}.ledger td:first-child{font-size:11px}.ledger .ratio td{font-size:14px;padding:5px 4px}.insight{padding:5px 8px;margin-top:6px;font-size:10px}.insight p{margin-top:2px;line-height:1.3}.model-note{font-size:9px;line-height:1.3;margin-top:5px}
+ .c{min-height:21px;font-size:11px}.hm{gap:3px}.ax{font-size:10px}.legend{margin-top:6px;font-size:10px;gap:8px}.bz-key{font-size:10px;margin-top:5px;padding-top:5px;line-height:1.3}.cell-detail{padding:8px;line-height:1.25}.cell-detail .big{margin-bottom:5px;font-size:22px}.cell-detail h3{font-size:10px;margin-bottom:4px}.cell-detail dl{margin:6px 0}.cell-detail dt{font-size:9px}.cell-detail dd{margin:1px 0 4px;font-size:12px}.cell-detail .contributors{font-size:9px;line-height:1.3}
+ .proposal{padding:6px 9px;font-size:12px;margin-bottom:8px}.trade-stage{padding:4px 7px}.trade-stage b{font-size:24px;margin:3px 0}.trade-stage small{font-size:10px}.trade-stage span{font-size:10px}.pretrade-note{padding:7px 9px;line-height:1.4;font-size:11px;margin-top:8px}.pretrade-warnings{font-size:10px;margin-top:6px}.pretrade-footer{margin-top:8px;font-size:10px}
+ .repairs{padding:9px 13px}.repair{padding:6px 10px}.repair-head{font-size:12px}.repair-values{font-size:20px;margin:3px 0}.repair small{font-size:9px;line-height:1.3}.repair-desc{font-size:10px;line-height:1.3;margin-top:3px}.repair-foot{font-size:9px;margin-top:5px;line-height:1.3}.terminal-foot{font-size:9px}
+}
+@media(min-width:1201px){
+ .terminal{padding-top:9px;gap:8px}.headline h1{font-size:22px;line-height:1.15}.headline{min-height:37px}.causal div{padding-top:5px;padding-bottom:5px}.causal small{font-size:9px;line-height:1.2}
+ .watch-note{display:none}.watch{padding-top:5px;padding-bottom:5px;font-size:10px}.watch-top{line-height:1.2}.watch-state{line-height:1.1}.watchlist{gap:3px}.position{font-size:10px;line-height:1.2}.position span{display:block}.position b{line-height:1.2}
+ .price-top{align-items:center}.quote small{font-size:9px;line-height:1.1}.symbol small{font-size:11px;line-height:1.1}.price-facts{margin:7px 0}.chart{height:86px}.chart-label{line-height:1.2;margin:4px 0}.evidence{font-size:10px;line-height:1.3}.evidence small{font-size:9px}.shadow-band{padding:4px 7px;font-size:10px;line-height:1.2;margin-top:5px}.why{font-size:10px;line-height:1.25;margin-top:5px}
+ .ledger th{padding-top:3px;padding-bottom:3px;line-height:1.2}.ledger td{padding-top:2px;padding-bottom:2px;font-size:12px}.ledger .ratio td{padding-top:4px;padding-bottom:4px}.hero-risk{font-size:10px}.hero-risk div{padding-top:4px;padding-bottom:4px}.hero-risk b{font-size:24px;line-height:1.1}.hero-risk small{line-height:1.2}.insight{font-size:10px;line-height:1.25}.model-note{font-size:9px;line-height:1.2}
+ .c{min-height:20px}.cell-detail dl{display:grid;gap:6px}.cell-detail dl>div{display:flex;justify-content:space-between;gap:5px}.cell-detail dd{margin:0;font-size:11px}.cell-detail dt{font-size:9px}.cell-detail .contributors{line-height:1.2}.cell-detail{font-size:10px}.legend{font-size:9px;line-height:1.2;gap:7px}.bz-key{font-size:10px;line-height:1.2}.frontier-body{gap:12px}.axis{line-height:1.2}
+ .repair-desc{display:none}.repair small{line-height:1.1;font-size:9px}.repair-head{font-size:11px;line-height:1.2}.repair-values{font-size:19px;line-height:1.2;margin:3px 0}.repair{padding:5px 9px}.repair-foot{font-size:9px;line-height:1.1;margin-top:4px}.repairs .ph{margin-bottom:5px}.repairs{padding:7px 12px}
+}
+@media(min-width:1201px){.c{min-height:18px}.hm{gap:2px}.axis{margin-top:3px}.legend{margin-top:4px}.bz-key{margin-top:3px;padding-top:3px}.decision-row .ph{margin-bottom:5px}.decision-row .panel{padding-top:10px;padding-bottom:10px}}
+@media(min-width:1201px){.watch-top{height:14px}.watch-state{margin:2px 0;height:10px}.watch-lcg{height:15px;align-items:center}.top-row .ph{margin-bottom:6px}.price-panel .why{font-size:10px;line-height:1.2}.repair-foot{line-height:1.1}.terminal{gap:6px}.repair-tag{font-size:8px}.pretrade-note{font-weight:400}.pretrade-note b{font-weight:500}}
+@media(min-width:1201px){.chart{height:116px}.pretrade-note{font-size:11px;line-height:1.3}.decision-row .pretrade-footer{margin-top:6px}}
+@media(min-width:1201px){.terminal{gap:4px;padding-bottom:78px}.terminal-foot{display:none}.chart{height:96px}}
+@media(max-width:600px){.evidence{grid-template-columns:repeat(3,minmax(0,1fr))!important;row-gap:7px}.evidence b{overflow-wrap:anywhere}.chart-label{gap:6px}.repair-head{flex-wrap:wrap}.price-mode{white-space:normal}}
+</style>
+</head>
+<body>
+<header class="top">
+ <div class="brand"><svg viewBox="0 0 32 36" fill="none" aria-hidden="true"><path d="M16 2 30 30H2L16 2Zm0 0 5 28M2 30l19-12 9 12" stroke="currentColor" stroke-width="1.4"/></svg><span>PRISM<small>THE REALITY LAYER</small></span></div>
+ <div class="seg" role="group" aria-label="Account"><button data-acct="judge" aria-pressed="true">Judge Mode</button><button data-acct="bitget" aria-pressed="false">Bitget account</button></div>
+ <span class="badge hyp" id="env">HYPOTHETICAL ACCOUNT</span><span class="grow"></span>
+ <span class="top-info" id="session">US session · loading</span><span class="top-info"><i class="dot" id="capdot"></i><span id="captext">Capture status</span></span>
+ <button class="ghost" id="evidence-btn">Evidence &amp; assumptions ↗</button>
+</header>
+<main class="terminal">
+ <div class="headline"><div><h1>See the risk between two clocks.</h1><div class="breadcrumb">MARKET REALITY → ACCOUNT REALITY → DECISION REALITY</div></div><div class="headline-note" id="mode-note">Real recorded prices · hypothetical account · deterministic stress.<br>Closure replay and verified frozen reference not yet available.</div></div>
+ <div class="causal" aria-label="Why a shadow account exists">
+  <div><b>US market closes</b><small id="story-session">Closure mechanism</small></div>
+  <div><b>Reference freezes</b><small class="concept">Proxy: 20:00 NY close</small></div>
+  <div><b>rToken still trades</b><small>Price discovery continues</small></div>
+  <div><b>Evaluate evidence</b><small class="concept">Reality engine · rule-based, uncalibrated</small></div>
+  <div><b>Shadow collateral</b><small>Explicit stress, not forecast</small></div>
+  <div><b>Account changes</b><small>Collateral + derivative PnL</small></div>
+  <div><b>Trade enters risk</b><small>Inspect the Blind Zone</small></div>
+  <div><b>Find a repair</b><small>Recomputed alternatives</small></div>
+ </div>
+ <div id="error" class="error-banner" hidden role="alert"></div>
+ <div class="top-row">
+  <section class="panel"><div class="ph"><h2><span class="step">01</span>WATCHLIST</h2><span class="tiny">rTokens</span></div><div id="watchlist" class="watchlist"></div><p class="watch-note">Move = live rToken vs the 20:00 New York reference proxy, shown only while Bitget's collateral reference is frozen. LCG = severe stress contribution.</p><div class="position" id="position"></div></section>
+  <section class="panel price-panel">
+   <div class="ph"><h2>PRICE REALITY</h2><span class="badge" id="price-mode">RECORDED</span></div>
+   <div class="price-top"><div class="symbol" id="selected-name">rNVDA<small>NVIDIA · NVDA</small></div><div class="quote" id="quote">—<small>Recorded price · not live</small></div></div>
+   <div class="price-facts" id="price-facts"></div>
+   <div class="chart" id="chart"></div>
+   <div class="chart-label"><span><i></i>rToken · Bitget 1m</span><span><i class="ref"></i>Stock perp · Bitget 1m</span><span id="ref-label"><i style="background:none;border-top:2px dashed #e3b341"></i>Frozen reference proxy</span><span class="chart-source" id="chart-source"></span></div>
+   <div class="evidence" id="evidence-row" style="grid-template-columns:repeat(5,minmax(0,1fr))"></div>
+   <div class="shadow-band" id="shadow-band"><span>PRISM shadow stress band</span><span class="quiet">Loading…</span></div>
+   <p class="why" id="why"><b>Why a shadow account?</b> Trading prices can move while the collateral mark is frozen. PRISM stress-tests that gap.</p>
+  </section>
+  <section class="panel account-panel">
+   <div class="ph"><h2><span class="step">02</span>DUAL REALITY</h2><span class="tiny" id="recon">Reconciliation pending</span></div>
+   <div class="hero-risk" id="hero-risk"></div>
+   <div class="scroll"><table class="ledger" id="ledger"></table></div>
+   <div class="insight" id="wrongway"></div>
+   <p class="model-note">Core ratio excludes partial-liquidation fees; not Bitget's reported mgnRatio. rToken collateral total is not returned by this API.</p>
+  </section>
+ </div>
+ <div class="decision-row">
+  <section class="panel">
+   <div class="ph"><h2><span class="step">03</span>THAW FRONTIER</h2><span class="badge">STRESS SCENARIO</span></div>
+   <div class="frontier-body"><div><div id="frontier"></div><div class="legend"><span><i style="background:#376e59"></i>Safe &lt;50%</span><span><i style="background:#a58b4e"></i>Watch 50–80%</span><span><i style="background:#d69a6b"></i>Warning 80–100%</span><span><i style="background:#bf6778"></i>Breach / equity ≤0</span></div><div class="bz-key" id="blind-note">Hatched cells = Blind Zone · acceptable baseline, shadow crosses the risk boundary.</div></div><div class="cell-detail" id="cell-detail"><h3>SELECTED SCENARIO</h3><p class="quiet">Loading scenario grid…</p></div></div>
+  </section>
+  <section class="panel" id="pt-panel">
+   <div class="ph"><h2>PRE-TRADE GATE</h2><span class="tiny">Advisory · no execution</span></div>
+   <div class="proposal" id="proposal">Proposal: add $10,000 BTC long using current rToken collateral.</div>
+   <div id="pretrade"></div>
+   <div class="pretrade-footer"><span id="trade-status">Submit via Ask PRISM to calculate.</span><button class="primary" id="analyze">Analyse proposal ↗</button></div>
+  </section>
+ </div>
+ <section class="panel repairs">
+  <div class="ph"><h2><span class="step">04</span>REPAIR SOLVER</h2><span class="tiny" id="repair-context">Severe scenario · target &lt;80% core ratio · advisory</span></div>
+  <div class="repair-grid" id="repairs"></div>
+  <div class="repair-foot" id="repair-note">Comparing feasible alternatives. Trading fees are excluded; estimated execution cost is not an all-in cost.</div>
+ </section>
+ <div class="terminal-foot"><span>Observed inputs ≠ counterfactual results. Missing evidence remains unavailable.</span><button id="details-btn">Source provenance &amp; model limitations ↗</button></div>
+</main>
+<footer class="command"><form id="ask"><label for="question">◇ Ask PRISM</label><input id="question" autocomplete="off" aria-label="Ask PRISM" value="Can I add another $10,000 BTC long tonight using my current rToken collateral?"><button id="ask-btn" type="submit">Analyse →</button></form><div class="command-note">Controls this workspace. Qwen parses and explains; deterministic engines calculate. Nothing is traded.</div></footer>
+<dialog id="evidence-drawer" class="drawer"><div class="ph"><h2>Evidence Lock</h2><button class="ghost" id="close-drawer" aria-label="Close evidence drawer">Close ×</button></div><p>Inspect the sources and limitations behind the visible terminal. No evidence is manufactured.</p><h3>Market evidence</h3><p>Live Bitget 1m candles for the selected rToken and its stock perp, plus the Reality Engine envelope (prism-reality-v0.1). The frozen reference is a proxy: the underlying stock's last extended-hours trade at or before 20:00 New York (Yahoo Finance, unofficial), falling back to the rToken close there, because Bitget's collateral index is not exposed. The stress band stays uncalibrated until enough closure windows with reopen are captured. Event evidence comes from SEC EDGAR 8-K filings (official, primary source); Bitget's US-stock data service is used again when it recovers.</p><pre id="chart-provenance"></pre><h3>Account &amp; calculation evidence</h3><ul id="notes"></ul><h3>Latest proposed trade</h3><div id="trade-evidence" class="dim">No trade analysis requested.</div><h3>Repair evidence</h3><ul id="repair-evidence"></ul></dialog>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num = v => Number(v);
+const usd = (v,d=0) => v == null ? "—" : (num(v)<0?"−$":"$")+Math.abs(num(v)).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
+const pct = (v,d=1) => v == null ? "EQ≤0" : (num(v)*100).toFixed(d)+"%";
+const shock = v => (num(v)>0?"+":num(v)<0?"−":"")+Math.abs(Math.round(num(v)*100))+"%";
+const loading = s => '<div class="loading"><span class="spin"></span>'+esc(s)+'</div>';
+const RECORDED = {"source":"Bitget SPOT RNVDAUSDT 1m candles","file":"data/raw/2026-10-06/bitget/api_v3_market_candles.jsonl","retrieved_at":"2026-10-06T23:55:31.326989+00:00","hashes":["sha256:af069617f4a9026d0d7deb23af219cbd55cb4aa08820d6c070f2600e2b7443c9","sha256:9034778030a622b44c9bd7be04a74d3526c47862789e1c0ab60e5f7e71cde2c6","sha256:ffcd66abc3a1b158274424c568c31b7d10cd9975fbba6947e12ec6f2bac17fc1","sha256:758a6f40888779d1236a92569ec498a30971de9e6997ffdbdc40a938aac34c48"],"points":[{"time":1791330480000,"close":"240.0365"},{"time":1791330540000,"close":"240.0888"},{"time":1791330600000,"close":"240.058"},{"time":1791330660000,"close":"240.07"},{"time":1791330720000,"close":"240.08"},{"time":1791330780000,"close":"240.1"},{"time":1791330840000,"close":"240.0985"},{"time":1791330900000,"close":"240.09"}]};
+const NAMES = {RNVDA:["rNVDA","NVIDIA","NVDA"],RSPY:["rSPY","SPDR S&P 500 ETF","SPY"],RCOIN:["rCOIN","Coinbase","COIN"],RMSTR:["rMSTR","Strategy","MSTR"]};
+let ACCOUNT="judge", SELECTED="RNVDA", WB=null, FRONTIER=null, TRADE=null, generation=0, busy=false, REALITY={}, SERIES={};
+const symOf=c=>c+"USDT";
+const age=s=>s==null?"—":s<3600?Math.max(1,Math.round(s/60))+"m":s<172800?Math.floor(s/3600)+"h "+Math.round(s%3600/60)+"m":Math.floor(s/86400)+"d "+Math.floor(s%86400/3600)+"h";
+const spct=v=>v==null?"—":(num(v)>0?"+":num(v)<0?"−":"")+Math.abs(num(v)*100).toFixed(2)+"%";
+const label=v=>String(v||"—").replaceAll("_"," ");
+function rtokenCoins(){const c=(WB?.holdings||[]).filter(h=>h.factor==="rtoken").map(h=>h.coin);return c.length?c:["RNVDA","RSPY","RCOIN","RMSTR"];}
+async function loadReality(version){
+ try{const r=await api("/api/reality?symbols="+rtokenCoins().map(symOf).join(","));if(version!==generation)return;REALITY=r.envelopes||{};}
+ catch(e){if(version!==generation)return;REALITY={};}
+ renderMarket();
+}
+async function loadSeries(coin){
+ if(!SERIES[coin]){try{SERIES[coin]=await api("/api/reality/"+symOf(coin)+"/series?minutes=240");}catch(e){SERIES[coin]={error:e.message};}}
+ if(SELECTED===coin)drawChart();
+}
+async function api(path,body){const r=await fetch(path,body?{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}:{});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.detail||r.statusText);return d;}
+function error(message){$("error").hidden=!message;$("error").textContent=message||"";}
+function drawChart(){
+ const sr=SERIES[SELECTED],e=REALITY[symOf(SELECTED)];
+ if(!sr){$("chart").innerHTML=loading("Loading Bitget candles…");$("chart-source").textContent="";return;}
+ const pts=(sr.rtoken?.points||[]).map(([t,c])=>({time:t,close:num(c)})).sort((a,b)=>a.time-b.time);
+ let perp=(sr.perp?.points||[]).map(([t,c])=>({time:t,close:num(c)})).sort((a,b)=>a.time-b.time);
+ if(!pts.length){$("chart").innerHTML='<div class="chart-empty">No Bitget candles returned for this rToken.<br>No synthetic price path is drawn.</div>';$("chart-source").textContent=sr.error||"";return;}
+ const last=pts.at(-1).close;
+ if(perp.length&&Math.abs(perp.at(-1).close/last-1)>0.05)perp=[]; // different share scale: not drawn on the same axis
+ const frozen=e?.regime==="FROZEN_REFERENCE"&&e.reference_price!=null,ref=frozen?num(e.reference_price):null;
+ $("ref-label").style.display=frozen?"":"none";
+ const all=[...pts,...perp].map(p=>p.close).concat(ref!=null?[ref]:[]);
+ const w=Math.max(300,$("chart").clientWidth),h=Math.max(86,$("chart").clientHeight),left=9,right=60,top=10,bottom=18;
+ const lo=Math.min(...all),hi=Math.max(...all),pad=Math.max((hi-lo)*.15,lo*.0005),min=lo-pad,max=hi+pad;
+ const t0=Math.min(pts[0].time,perp[0]?.time??Infinity),t1=Math.max(pts.at(-1).time,perp.at(-1)?.time??0);
+ const x=t=>left+(t-t0)/Math.max(1,t1-t0)*(w-left-right),y=v=>top+(max-v)/(max-min)*(h-top-bottom);
+ const path=a=>a.map((p,i)=>(i?"L":"M")+x(p.time).toFixed(1)+","+y(p.close).toFixed(1)).join(" ");
+ const time=t=>new Date(t).toISOString().slice(11,16);
+ const grids=[0,.5,1].map(f=>{const v=min+(max-min)*f,py=y(v);return '<line x1="'+left+'" y1="'+py+'" x2="'+(w-right)+'" y2="'+py+'" stroke="#263541"/><text x="'+(w-right+7)+'" y="'+(py+3)+'" fill="#8698aa" font-size="9">'+v.toFixed(2)+'</text>';}).join("");
+ const refLine=ref!=null?'<line x1="'+left+'" y1="'+y(ref)+'" x2="'+(w-right)+'" y2="'+y(ref)+'" stroke="#e3b341" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"><title>Reference proxy '+usd(ref,2)+' (rToken close at 20:00 New York)</title></line>':"";
+ $("chart").innerHTML='<svg role="img" aria-label="'+esc(SELECTED)+' one-minute closes from Bitget, '+time(t0)+' to '+time(t1)+' UTC" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">'+grids+refLine+
+  (perp.length?'<path d="'+path(perp)+'" fill="none" stroke="#5aa9ff" stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>':"")+
+  '<path d="'+path(pts)+'" fill="none" stroke="#91dac5" stroke-width="2" vector-effect="non-scaling-stroke"/>'+
+  '<text x="'+left+'" y="'+(h-5)+'" fill="#8698aa" font-size="9">'+time(t0)+' UTC</text><text x="'+(w-right-25)+'" y="'+(h-5)+'" fill="#8698aa" font-size="9">'+time(t1)+' UTC</text></svg>';
+ $("chart-source").textContent="Bitget 1m · last "+Math.round((t1-t0)/60000)+" min · UTC";
+ $("chart-provenance").textContent=JSON.stringify({rtoken:{source:sr.rtoken?.source,retrieved_at:sr.rtoken?.retrieved_at},perp:sr.perp?{source:sr.perp.source,retrieved_at:sr.perp.retrieved_at}:null,reference_proxy:e?.sources?.reference_proxy||null,data_mode:"LIVE",is_live:true,is_hypothetical:false,is_replay:false},null,2);
+}
+function renderMarket(){
+ const h=WB?.holdings.find(x=>x.coin===SELECTED),names=NAMES[SELECTED]||[SELECTED,SELECTED,SELECTED];
+ $("selected-name").innerHTML=esc(names[0])+'<small>'+esc(names[1])+' · '+esc(names[2])+'</small>';
+ const e=REALITY[symOf(SELECTED)],frozen=e?.regime==="FROZEN_REFERENCE";
+ $("quote").innerHTML=(e?.live_price!=null?usd(e.live_price,2):usd(h?.price,2))+'<small>'+(e?.live_price!=null?"Live Bitget last · "+age(e.live_age_seconds)+" old":ACCOUNT==="judge"?"Judge fixture price · not live":"Account input price")+'</small>';
+ $("quote").title=e?.sources?.live||h?.price_source||"Unavailable";
+ $("price-mode").textContent=!e?"LOADING REALITY":e.error?"REALITY UNAVAILABLE":frozen?"COLLATERAL REFERENCE FROZEN":"COLLATERAL REFERENCE LIVE";
+ const facts=!e||e.error?[["LIVE rTOKEN","—"],["MOVE VS. REFERENCE","—"],["REFERENCE PROXY","—"],["REFERENCE AGE","—"]]:[
+  ["LIVE rTOKEN",e.live_price!=null?usd(e.live_price,2):"Unavailable"],
+  ["MOVE VS. REFERENCE",frozen?spct(e.move):"n/a · reference live"],
+  ["REFERENCE PROXY",e.reference_price!=null?'<span title="'+esc(e.reference_source||"")+'">'+usd(e.reference_price,2)+(frozen?"":" (last close)")+'</span>':"Unavailable"],
+  ["REFERENCE AGE",frozen?age(e.reference_age_seconds):"Live (tracks the stock)"]];
+ $("price-facts").innerHTML=facts.map(([k,v])=>'<div><small>'+k+'</small><b>'+v+'</b></div>').join("");
+ const liq=e?.liquidity||{},quality=e?.market_quality,q=quality==="UNAVAILABLE"&&liq.spread_bps!=null?"Spread "+num(liq.spread_bps).toFixed(1)+" bp":label(quality);
+ const agree=e?.reference_agreement,gap=e?.reference_gap_bps!=null?" · "+(num(e.reference_gap_bps)>0?"+":"")+num(e.reference_gap_bps).toFixed(0)+" bp":"";
+ const evs=e?.event_support||"",evText=evs==="PRIMARY_EVENT"?(e.events||[]).length+" SEC 8-K filing"+((e.events||[]).length>1?"s":""):evs==="NO_FILING"?"No 8-K (SEC, 3 days)":evs==="NOT_APPLICABLE"?"Not a filer (ETF)":evs.startsWith("UNAVAILABLE")?"UNAVAILABLE":label(evs);
+ const ev=[["REALITY STATE",e?.market_state==="NOT_APPLICABLE"?"REFERENCE LIVE":label(e?.market_state),"Discovery / drift / overshoot / thin / conflict: deterministic rules in prism/reality/engine.py"],
+  ["EVIDENCE MODE",label(e?.evidence_mode),"OBSERVED / HYBRID / INFERRED (§23)"],
+  ["LIQUIDITY QUALITY",q,quality==="UNAVAILABLE"?"Graded only against this rToken's own captured history; not enough history yet":"Ranked against this rToken's captured spread and depth"],
+  ["REFERENCE AGREEMENT",label(agree)+gap,"rToken vs "+(e?.agreement_reference||"an independent reference")],
+  ["EVENT SUPPORT",evText,(e?.events||[]).join("\n")||e?.sources?.events||evs]];
+ $("evidence-row").innerHTML=ev.map(([k,v,t])=>'<div title="'+esc(t)+'"><small>'+k+'</small><b>'+esc(v)+'</b></div>').join("");
+ $("shadow-band").innerHTML='<span>PRISM shadow stress band</span><span class="quiet" title="'+esc((e?.reason_codes||[]).join(" · "))+'">'+(e&&!e.error?(e.reality_center!=null?"Centre "+spct(e.reality_center)+" (uncalibrated) · ":"")+"Band not calibrated · "+esc(e.data_support):"Unavailable")+'</span>';
+ $("why").innerHTML='<b>Why a shadow account?</b> '+(frozen?"Bitget's collateral reference for "+esc(SELECTED)+" is frozen at the last 20:00 New York close while the rToken keeps trading. PRISM stress-tests that gap.":"U.S. markets are in session, so Bitget's collateral reference tracks the stock. The frozen-versus-live gap opens overnight and at weekends; the capture records it.");
+ if(SERIES[SELECTED])drawChart();else{$("chart").innerHTML=loading("Loading Bitget candles…");loadSeries(SELECTED);}
+ $("watchlist").innerHTML=(WB?.holdings.filter(h=>h.factor==="rtoken")||[]).map(h=>{
+ const name=NAMES[h.coin]?.[0]||h.coin,r=REALITY[symOf(h.coin)];
+ const delta=WB.scenarios.severe?.components?.filter(c=>c.kind==="collateral"&&c.name===h.coin).reduce((s,c)=>s+num(c.delta),0);
+ return '<button class="watch '+(SELECTED===h.coin?"selected":"")+'" data-symbol="'+esc(h.coin)+'" aria-pressed="'+(SELECTED===h.coin)+'" title="'+esc(h.price_source)+'"><span class="watch-top"><span>'+esc(name)+'</span><span class="'+(r?.regime==="FROZEN_REFERENCE"&&r.move!=null?(num(r.move)<0?"WARNING":"SAFE"):"quiet")+'">'+(r?.regime==="FROZEN_REFERENCE"?"Move "+spct(r.move):r?"Ref live":"Move —")+'</span></span><div class="watch-state"><span>'+esc(r?(r.market_state==="NOT_APPLICABLE"?"REFERENCE LIVE":label(r.market_state)):"LOADING")+'</span><span>'+esc(r?label(r.evidence_mode):"Evidence —")+'</span></div><div class="watch-lcg"><small>Severe LCG</small><span class="num '+(delta<0?"WARNING":"")+'">'+(delta==null?"—":usd(delta))+'</span></div></button>';
+ }).join("")||'<p class="quiet">No rToken collateral in this account.</p>';
+ $("position").innerHTML=(WB?.positions||[]).map(p=>'<span>Leveraged exposure</span><b>'+esc(p.symbol)+' · '+(p.direction>0?"LONG":"SHORT")+'</b><span class="num">'+esc(p.size)+' units · mark '+usd(p.mark_price,2)+'</span>').join("");
+}
+function insight(reports){
+ const flagged=(reports||[]).filter(r=>r.wrong_way_assets?.length);
+ return flagged.length?flagged.map(r=>'<strong>WRONG-WAY COLLATERAL · '+(num(r.wrong_way_share)*100).toFixed(1)+'%</strong><p>A crypto shock can hurt '+esc(r.position)+' and '+esc(r.wrong_way_assets.join(" / "))+' collateral together. Historical sensitivities, not a causal guarantee.</p>').join(""):'<strong style="color:var(--dim)">Wrong-way collateral</strong><p>No shared-downside exposure detected in the returned dataset.</p>';
+}
+function renderLedger(){
+ const b=WB.baseline,c=WB.scenarios.central,s=WB.scenarios.severe,hyp=b.label.includes("HYPOTHETICAL");
+ $("hero-risk").innerHTML='<div><small>CURRENT CORE MARGIN</small><b>'+pct(b.core_ratio)+'</b></div><div><small>SEVERE COLLATERAL GAP</small><b class="WARNING">'+usd(s.latent_collateral_gap)+'</b></div>';
+ const row=(k,v,cls="")=>'<tr class="'+cls+'"><td>'+k+'</td>'+v.map(x=>'<td class="num">'+x+'</td>').join("")+'</tr>';
+ $("ledger").innerHTML='<thead><tr><th>Account state</th><th>'+(hyp?"JUDGE BASELINE":"BITGET NOW")+'<small>'+(hyp?"hypothetical":"observed")+'</small></th><th>PRISM CENTRAL<small>counterfactual</small></th><th>PRISM SEVERE<small>counterfactual</small></th></tr></thead><tbody>'+
+ row("Effective equity",[usd(b.effective_equity),usd(c.shadow_effective_equity),usd(s.shadow_effective_equity)])+
+ row("rToken collateral",[usd(c.recognized_rtoken_collateral),usd(c.shadow_rtoken_collateral),usd(s.shadow_rtoken_collateral)])+
+ row("Maintenance margin",[usd(b.maintenance_margin),usd(c.shadow_maintenance_margin),usd(s.shadow_maintenance_margin)])+
+ row("Core margin ratio",[pct(b.core_ratio),'<span class="'+c.state+'">'+pct(c.shadow_core_ratio)+'</span>','<span class="'+s.state+'">'+pct(s.shadow_core_ratio)+'</span>'],"ratio")+
+ row("Margin state",["See core ratio",'<span class="'+c.state+'">'+esc(c.state)+'</span>','<span class="'+s.state+'">'+esc(s.state)+'</span>'])+
+ row("Latent collateral gap",["—",usd(c.latent_collateral_gap),'<span class="WARNING">'+usd(s.latent_collateral_gap)+'</span>'])+
+ row("Thaw-at-Risk",["—",c.thaw_at_risk_pp==null?"n/a":num(c.thaw_at_risk_pp).toFixed(1)+"pp",s.thaw_at_risk_pp==null?"n/a":num(s.thaw_at_risk_pp).toFixed(1)+"pp"])+"</tbody>";
+ $("wrongway").innerHTML=insight(WB.wrong_way);
+ $("recon").textContent=b.reconciliation_mode.replaceAll("_"," ");
+}
+function selectCell(cell){
+ document.querySelectorAll(".c").forEach(b=>b.classList.toggle("sel",b.dataset.key===cell.crypto+"|"+cell.rtoken));
+ $("cell-detail").innerHTML='<h3>SELECTED SCENARIO</h3><div class="big '+cell.state+'">'+pct(cell.ratio)+'</div><div>'+shock(cell.crypto)+' crypto / '+shock(cell.rtoken)+' rToken</div><div class="'+cell.state+'">'+esc(cell.state)+(cell.blind_zone?" · BLIND ZONE":"")+'</div><dl><div><dt>Effective equity</dt><dd>'+usd(cell.equity)+'</dd></div><div><dt>Collateral gap</dt><dd>'+usd(cell.lcg)+'</dd></div><div><dt>Derivative PnL</dt><dd>'+usd(cell.pnl)+'</dd></div></dl><div class="contributors">'+cell.top.map(t=>esc(t.name)+' '+usd(t.delta)).join(" · ")+'</div>';
+}
+function drawFrontier(f){
+ const map=Object.fromEntries(f.cells.map(c=>[c.crypto+"|"+c.rtoken,c]));
+ let h='<div class="hm"><div></div>'+f.rtoken_shocks.map(r=>'<div class="ax">'+shock(r)+'</div>').join("");
+ f.crypto_shocks.forEach(c=>{h+='<div class="ax">'+shock(c)+'</div>';f.rtoken_shocks.forEach(r=>{const x=map[c+"|"+r],label=x.ratio==null?"EQ≤0":num(x.ratio)>=1?"≥100%":Math.round(num(x.ratio)*100)+"%";h+='<button class="c '+x.state+(x.blind_zone?" bz":"")+'" data-key="'+c+'|'+r+'" aria-label="Crypto '+shock(c)+', rToken '+shock(r)+': '+label+(x.blind_zone?', Blind Zone':'')+'">'+label+'</button>';});});
+ $("frontier").innerHTML=h+'</div><div class="axis"><span>↓ Crypto shock</span><span>rToken reopen shock →</span></div>';
+ $("frontier").onclick=e=>{const b=e.target.closest(".c");if(b)selectCell(map[b.dataset.key]);};
+ const nb=f.nearest_blind_zone;
+ const chosen=nb?map[nb.crypto+"|"+nb.rtoken]:f.cells.find(c=>num(c.crypto)===0&&num(c.rtoken)===0)||f.cells[0];
+ if(chosen)selectCell(chosen);
+ $("blind-note").textContent="Hatched = Blind Zone · "+pct(f.boundary,0)+" boundary (warning, not liquidation). "+f.cells.filter(c=>c.blind_zone).length+" cells cross it.";
+}
+function tradeStage(k,v,detail,cls=""){return '<div class="trade-stage"><small>'+k+'</small><b class="'+cls+'">'+v+'</b><span>'+detail+'</span></div>';}
+function emptyPretrade(){
+ $("pretrade").innerHTML='<div class="trade-flow">'+tradeStage("CURRENT",WB?(WB.empty?"EMPTY":pct(WB.baseline.core_ratio)):"—","Core margin ratio")+tradeStage("AFTER TRADE","—","Not analysed")+tradeStage("PRISM CENTRAL","—","After-trade stress")+tradeStage("SEVERE","—","After-trade stress")+'</div><div class="pretrade-note">A proposed trade adds exposure to both account realities. Ask PRISM to recompute stress, count Blind-Zone cells and compare repairs.</div><div class="pretrade-warnings">'+(WB?.wrong_way?.some(r=>r.wrong_way_assets?.length)?"Existing wrong-way collateral detected. The proposal has not been analysed.":"")+'</div>';
+}
+function renderRepairs(candidates,notes,context){
+ const labels=[["add_stable","Add stable collateral"],["reduce_perp","Reduce leveraged position"],["sell_rtoken","Reduce rToken collateral"],["mixed","Mixed repair"]];
+ const actionGroups=[/stable|top.?up|deposit/i,/reduce.*perp|reduce.*position/i,/sell.*rtoken|reduce.*rtoken/i,/mixed/i];
+ $("repairs").innerHTML=labels.map(([key,label],i)=>{
+ // Same display-only outlay comparison used by the previous UI. Unknown costs are not zero.
+ const knownCost=c=>c.feasible&&c.execution_cost!=null;
+ const cost=c=>num(c.cash_required)+num(c.execution_cost);
+ const group=(candidates||[]).filter(c=>actionGroups[i].test(c.action)).sort((a,b)=>knownCost(a)&&knownCost(b)?cost(a)-cost(b):knownCost(a)?-1:knownCost(b)?1:0);
+ const c=group.find(c=>c.feasible)||group[0];
+ const rank=(candidates||[]).filter(knownCost).sort((a,b)=>cost(a)-cost(b))[0];
+ if(!c)return '<div class="repair"><div class="repair-head">'+label+'</div><div class="repair-values quiet">—</div><small>No returned alternative</small><div class="repair-desc">Unavailable · no cost is invented</div></div>';
+ const best=c===rank;
+ return '<div class="repair '+(best?"best":"")+'" title="'+esc(c.detail+(c.reason?" · "+c.reason:""))+'"><div class="repair-head"><span>'+label+'</span><span class="repair-tag">'+(best?"LOWEST OUTLAY":c.feasible?"FEASIBLE":"BLOCKED")+'</span></div><div class="repair-values"><span>'+ (c.shadow_after?pct(c.shadow_after.shadow_core_ratio):"—")+'</span><span>'+usd(c.cash_required)+'</span></div><small>Shadow core ratio / cash required</small><div class="repair-desc">'+esc(c.detail)+'</div><small>Exec. estimate '+usd(c.execution_cost,2)+' · exposure Δ '+num(c.exposure_change_pct).toFixed(1)+'%</small></div>';
+ }).join("");
+ $("repair-context").textContent=context||"Severe scenario · target <80% core ratio · advisory";
+ $("repair-note").textContent="Lowest outlay = cash + known execution estimate. Fees excluded; unknown costs cannot win. Compare exposure changes too.";
+ $("repair-evidence").innerHTML=(notes||[]).map(n=>'<li>'+esc(n)+'</li>').join("");
+}
+async function load(){
+ const version=++generation;WB=null;TRADE=null;FRONTIER=null;error("");
+ $("quote").innerHTML='—<small>Loading account input…</small>';$("price-facts").innerHTML="";$("recon").textContent="Loading baseline";$("notes").innerHTML="";$("trade-evidence").textContent="No analysis for the newly selected account.";
+ document.querySelectorAll("[data-acct]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.acct===ACCOUNT)));
+ $("watchlist").innerHTML=loading("Loading account…");$("ledger").innerHTML="";$("hero-risk").innerHTML="";$("wrongway").innerHTML="";$("position").innerHTML="";$("frontier").innerHTML=loading("Computing grid…");$("cell-detail").innerHTML="<h3>SELECTED SCENARIO</h3><p>Waiting for grid</p>";
+ $("trade-status").textContent="Submit via Ask PRISM to calculate.";emptyPretrade();renderRepairs([],[]);
+ try{
+  const wb=await api("/api/workbench?account="+ACCOUNT);if(version!==generation)return;WB=wb;
+  const hyp=wb.baseline.label.includes("HYPOTHETICAL"),demo=wb.baseline.label.includes("DEMO");
+  $("env").textContent=hyp?"HYPOTHETICAL ACCOUNT":demo?"BITGET DEMO":"BITGET OBSERVED";$("env").className="badge "+(hyp?"hyp":demo?"demo":"live");
+  $("mode-note").innerHTML=hyp?"Real recorded prices · hypothetical account · deterministic stress.<br>Closure replay and verified frozen reference not yet available.":"Bitget account baseline · observed inputs · counterfactual stress.<br>Price Reality fields are shown only when verified.";
+ $("notes").innerHTML=(wb.notes||[]).map(n=>'<li>'+esc(n)+'</li>').join("")+'<li>Reconciliation: '+esc(wb.baseline.reconciliation_mode)+'. Core margin ratio excludes partial-liquidation fees and is not Bitget mgnRatio.</li><li>Shadow values are deterministic stress scenarios, not calibrated price forecasts. Engine: '+esc(wb.scenarios.severe?.version||"not returned")+'.</li>';
+  if(!wb.holdings.some(h=>h.coin===SELECTED))SELECTED=wb.holdings.find(h=>h.factor==="rtoken")?.coin||"RNVDA";
+  REALITY={};renderMarket();emptyPretrade();loadReality(version);
+  if(wb.empty){$("ledger").innerHTML="<tbody><tr><td>No exposure in this account.</td></tr></tbody>";$("frontier").innerHTML="<p>No account exposure; no frontier.</p>";return;}
+  renderLedger();
+  api("/api/repair",{account:ACCOUNT,scenario:"severe",target:"0.80",objective:"min_execution_cost"}).then(r=>{if(version===generation&&!TRADE)renderRepairs(r.candidates,r.notes);}).catch(e=>{if(version===generation)$("repair-note").textContent="Repair data unavailable: "+e.message;});
+  const f=await api("/api/frontier?account="+ACCOUNT);if(version!==generation)return;FRONTIER=f;drawFrontier(f);
+ }catch(e){if(version===generation){error(e.message);$("frontier").innerHTML='<p class="err">Analysis unavailable; no values are substituted.</p>';}}
+}
+async function analyse(ev){
+ ev?.preventDefault();if(busy)return;if(!WB){error("Wait for the account baseline to finish loading before analysing a proposal.");return;}
+ const version=generation,account=ACCOUNT;busy=true;$("ask-btn").disabled=true;$("analyze").disabled=true;$("ask-btn").textContent="Analysing…";$("trade-status").textContent="Qwen parses → deterministic engines calculate";
+ $("proposal").textContent=$("question").value;$("pretrade").innerHTML=loading("Recomputing proposal and repairs · this can take about 30 seconds…");error("");
+ try{
+  const r=await api("/api/pretrade",{text:$("question").value,account});if(version!==generation)return;
+  if(r.rejected){$("pretrade").innerHTML='<p class="err">'+esc(r.rejected)+'</p>';return;}
+  TRADE=r;
+  $("proposal").textContent=(r.parsed_trade.direction||"").toUpperCase()+" "+r.parsed_trade.instrument+" · "+usd(r.parsed_trade.notional_usd)+" proposed";
+  $("pretrade").innerHTML='<div class="trade-flow">'+tradeStage("CURRENT",pct(WB.baseline.core_ratio),"Baseline core ratio")+
+    tradeStage("AFTER TRADE","—","Not returned by API")+
+    tradeStage("PRISM CENTRAL",pct(r.after.central.ratio),r.after.central.state,r.after.central.state)+
+    tradeStage("SEVERE",pct(r.after.severe.ratio),r.after.severe.state,r.after.severe.state)+'</div><div class="pretrade-note"><b>Blind-Zone cells '+r.blind_zone_cells.before+' → '+r.blind_zone_cells.after+'</b> · '+num(r.trade.added_size).toFixed(4)+' units at '+usd(r.trade.entry_price,2)+'<br>Deterministic verdict and supporting evidence are available in Evidence Lock.</div><div class="pretrade-warnings">'+((r.wrong_way||[]).filter(x=>x.wrong_way_assets?.length).map(x=>'Wrong-way: '+esc(x.position)+' ↔ '+esc(x.wrong_way_assets.join(" / "))).join(" · "))+'</div>';
+  $("trade-status").textContent="Calculated · no order placed";
+  // Respect solver output. No new optimization or risk arithmetic is performed by the UI.
+  renderRepairs(r.repairs.candidates,r.repairs.notes,"AFTER PROPOSED TRADE · severe scenario · target <"+pct(r.repairs.target_ratio,0));
+  $("trade-evidence").innerHTML='<p><b>Deterministic verdict</b><br>'+esc(r.verdict)+'</p><p>'+esc(r.explanation||r.explanation_rejected||"No model explanation available.")+'</p><ul>'+(r.notes||[]).map(n=>'<li>'+esc(n)+'</li>').join("")+'</ul>';
+ }catch(e){if(version===generation){$("pretrade").innerHTML='<p class="err">'+esc(e.message)+'</p>';$("trade-status").textContent="Analysis unavailable · no result invented";}}
+ finally{busy=false;$("ask-btn").disabled=false;$("analyze").disabled=false;$("ask-btn").textContent="Analyse →";}
+}
+async function status(){
+ try{const m=await api("/api/market/state"),ny=m.ny_local||{};const closed=ny.closed_weekday||ny.in_specific_closure;const phase=closed?"closed":(ny.phase||"unknown").replaceAll("_"," ");$("session").textContent="US · "+phase;$("story-session").textContent="Current session: "+phase;}catch{$("session").textContent="US · unavailable";}
+ try{const c=await api("/api/capture/status"),fresh=c.at&&Date.now()-Date.parse(c.at)<300000;$("capdot").className="dot"+(fresh?" on":"");$("captext").textContent=c.at?"Capture "+(fresh?"live":"stale"):"Capture off";}catch{$("captext").textContent="Capture unavailable";}
+}
+$("watchlist").onclick=e=>{const b=e.target.closest("[data-symbol]");if(b){SELECTED=b.dataset.symbol;renderMarket();}};
+setInterval(()=>{if(WB){SERIES={};loadReality(generation);}},60000);
+document.querySelectorAll("[data-acct]").forEach(b=>b.onclick=()=>{if(ACCOUNT!==b.dataset.acct){ACCOUNT=b.dataset.acct;load();}});
+$("ask").onsubmit=analyse;$("analyze").onclick=()=>analyse();
+$("evidence-btn").onclick=$("details-btn").onclick=()=>{$("evidence-drawer").showModal();};
+$("close-drawer").onclick=()=>$("evidence-drawer").close();
+$("chart-provenance").textContent=JSON.stringify({source:RECORDED.source,file:RECORDED.file,retrieved_at:RECORDED.retrieved_at,raw_payload_hashes:RECORDED.hashes,data_mode:"RECORDED",is_live:false,is_hypothetical:false,is_replay:false},null,2);
+window.addEventListener("resize",drawChart);
+drawChart();load();status();setInterval(status,60000);
+</script>
+</body>
+</html>

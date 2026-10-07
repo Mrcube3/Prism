@@ -1,0 +1,9 @@
+# Re-attaches app.getprismpulse.xyz to Beam's Caddy after Caddy restarts (see caddy_attach_prism.sh).
+[Unit]
+Description=Attach PRISM site to Beam's Caddy (idempotent)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /home/ubuntu/prism/deploy/caddy_attach_prism.sh

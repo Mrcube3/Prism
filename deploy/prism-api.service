@@ -1,0 +1,24 @@
+# PRISM read-only API and page, bound to the Docker bridge (172.18.0.1) so Beam's Caddy can proxy it; UFW allows only 172.18.0.0/16.
+# View it from your laptop through an SSH tunnel:
+#   ssh -i ~/.ssh/beam_vps -N -L 8790:172.18.0.1:8790 ubuntu@16.61.50.207   then open http://localhost:8790
+[Unit]
+Description=PRISM read-only API (172.18.0.1:8790)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/prism
+ExecStart=/home/ubuntu/.local/bin/uv run --project services/api uvicorn prism.api.app:app --app-dir services/api --host 172.18.0.1 --port 8790
+Restart=always
+RestartSec=10
+Nice=10
+CPUQuota=50%
+MemoryMax=400M
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
