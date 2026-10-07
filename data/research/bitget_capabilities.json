@@ -1,0 +1,1081 @@
+{
+  "timestamp": "2026-10-06T23:55:47.557735+00:00",
+  "base_url": "https://api.bitget.com",
+  "credentials_configured": true,
+  "account_environment": "DEMO_PAPTRADING",
+  "summary": {
+    "reality_stock_info": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "market_states": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "market_calendar": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "rtoken_instruments": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "rtoken_ticker": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "rtoken_candles": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "rtoken_public_orderbook": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "crypto_perp_ticker": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "position_tier": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "discount_rate": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "custom_collateral_coins": {
+      "status": "UNVERIFIED",
+      "reason": "HTTP 400, code 40006: Invalid ACCESS_KEY"
+    },
+    "account_info": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "account_settings": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "account_assets": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "positions": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "collateral_type": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "custom_collateral_coins_auth": {
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000."
+    },
+    "eligible_discount_rate": {
+      "status": "UNVERIFIED",
+      "reason": "Endpoint not served to this key/environment (404); this is not evidence of a whitelist refusal. HTTP 404, code 40404: Request URL NOT FOUND"
+    },
+    "fee_rate": {
+      "status": "UNVERIFIED",
+      "reason": "Endpoint not served to this key/environment (404); this is not evidence of a whitelist refusal. HTTP 404, code 40404: Request URL NOT FOUND"
+    },
+    "reality_depth": {
+      "status": "UNVERIFIED",
+      "reason": "Endpoint not served to this key/environment (404); this is not evidence of a whitelist refusal. HTTP 404, code 40404: Request URL NOT FOUND"
+    },
+    "reality_fills": {
+      "status": "UNVERIFIED",
+      "reason": "Endpoint not served to this key/environment (404); this is not evidence of a whitelist refusal. HTTP 404, code 40404: Request URL NOT FOUND"
+    },
+    "ws_account": {
+      "status": "VERIFIED",
+      "reason": "Login ok (s timestamp); received a 'account' push."
+    },
+    "ws_position": {
+      "status": "VERIFIED",
+      "reason": "Login ok (s timestamp); received a 'position' push."
+    },
+    "collateral_ratio_tiers": {
+      "status": "UNVERIFIED",
+      "reason": "Requires manual review of discount_rate / eligible_discount_rate / custom_collateral_coins samples."
+    },
+    "reconciliation": {
+      "status": "NOT_STARTED",
+      "reason": "M2."
+    }
+  },
+  "reality_universe": {
+    "rtoken_count": 2810,
+    "weekend_tradable_yes": 90,
+    "weekend_tradable_values": [
+      "no",
+      "yes"
+    ],
+    "example_symbols": [
+      "RCVCOUSDT",
+      "RPBRUSDT",
+      "RWHDUSDT",
+      "RSYKUSDT",
+      "RHGTYUSDT",
+      "RNKEUSDT",
+      "RBPUSDT",
+      "RELVUSDT",
+      "RPHUSDT",
+      "RPNCUSDT"
+    ]
+  },
+  "key_permissions": {
+    "permType": "read_and_write",
+    "permissions": [
+      "uta_mgt",
+      "uta_trade"
+    ]
+  },
+  "rest": [
+    {
+      "id": "reality_stock_info",
+      "method": "GET",
+      "endpoint": "/api/v3/reality/market/stock-info",
+      "authenticated": false,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:25.272117+00:00",
+      "provider_ts": "2026-10-06T23:55:26.321000+00:00",
+      "raw_payload_hash": "sha256:0da81bcf879cadffd95f8d9b8e4e18e2b43af4a55d44facba5ffe051ce6274e5",
+      "data_field_paths": [
+        "[].code",
+        "[].name",
+        "[].symbol",
+        "[].tradingPeriod",
+        "[].weekendTradable"
+      ],
+      "note": null,
+      "missing_expected_fields": [],
+      "sample": [
+        {
+          "symbol": "RCVCOUSDT",
+          "code": "CVCO",
+          "name": "Cavco Industries, Inc.",
+          "tradingPeriod": [
+            "pre_market",
+            "regular",
+            "after_hours",
+            "overnight"
+          ],
+          "weekendTradable": "no"
+        },
+        {
+          "symbol": "RPBRUSDT",
+          "code": "PBR",
+          "name": null,
+          "tradingPeriod": [
+            "after_hours",
+            "regular",
+            "pre_market",
+            "overnight"
+          ],
+          "weekendTradable": "no"
+        },
+        {
+          "symbol": "RWHDUSDT",
+          "code": "WHD",
+          "name": "Cactus, Inc.",
+          "tradingPeriod": [
+            "pre_market",
+            "regular",
+            "after_hours",
+            "overnight"
+          ],
+          "weekendTradable": "no"
+        }
+      ]
+    },
+    {
+      "id": "market_states",
+      "method": "GET",
+      "endpoint": "/api/v3/reality/market/states",
+      "authenticated": false,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:27.244290+00:00",
+      "provider_ts": "2026-10-06T23:55:27.415000+00:00",
+      "raw_payload_hash": "sha256:7a9bb40fc6158d1a15ffad36e7e2de0aef96ee240cb952600e1be950c56aebf4",
+      "data_field_paths": [
+        "daylightType",
+        "market",
+        "stateList",
+        "stateList[].endTime",
+        "stateList[].startTime",
+        "stateList[].state",
+        "stateList[].timeZone"
+      ],
+      "note": null,
+      "sample": {
+        "market": "US",
+        "daylightType": "standard",
+        "stateList": [
+          {
+            "state": "pre_market",
+            "timeZone": "EST",
+            "startTime": "04:00",
+            "endTime": "09:30"
+          },
+          {
+            "state": "regular",
+            "timeZone": "EST",
+            "startTime": "09:30",
+            "endTime": "16:00"
+          },
+          {
+            "state": "after_hours",
+            "timeZone": "EST",
+            "startTime": "16:00",
+            "endTime": "20:00"
+          }
+        ]
+      }
+    },
+    {
+      "id": "market_calendar",
+      "method": "GET",
+      "endpoint": "/api/v3/reality/market/calendar",
+      "authenticated": false,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:27.758943+00:00",
+      "provider_ts": "2026-10-06T23:55:27.949000+00:00",
+      "raw_payload_hash": "sha256:ca6e6c141ae28107e0d0bf83a762e99550b29aa9f4090edcfe6836546d67b7e8",
+      "data_field_paths": [
+        "regularConfig",
+        "specificConfig",
+        "specificConfig[].endTime",
+        "specificConfig[].remark",
+        "specificConfig[].startTime",
+        "timeZone"
+      ],
+      "note": null,
+      "sample": {
+        "timeZone": "EST",
+        "specificConfig": [
+          {
+            "remark": "[REDACTED]",
+            "startTime": "2026-06-18 20:00",
+            "endTime": "2026-06-19 20:00"
+          },
+          {
+            "remark": "[REDACTED]",
+            "startTime": "2026-07-02 20:00",
+            "endTime": "2026-07-03 20:00"
+          },
+          {
+            "remark": "[REDACTED]",
+            "startTime": "2026-09-06 20:00",
+            "endTime": "2026-09-07 20:00"
+          }
+        ],
+        "regularConfig": [
+          "SATURDAY",
+          "SUNDAY"
+        ]
+      }
+    },
+    {
+      "id": "rtoken_instruments",
+      "method": "GET",
+      "endpoint": "/api/v3/market/instruments?category=SPOT&symbol=RNVDAUSDT",
+      "authenticated": false,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:28.893218+00:00",
+      "provider_ts": "2026-10-06T23:55:29.076000+00:00",
+      "raw_payload_hash": "sha256:1e1c68b7cc02ccb73e60347dcab55f6df7b6cfaa546a08f43287fc77848c6472",
+      "data_field_paths": [
+        "[].areaSymbol",
+        "[].baseCoin",
+        "[].buyLimitPriceRatio",
+        "[].category",
+        "[].isReality",
+        "[].launchTime",
+        "[].maintainTime",
+        "[].maxMarketOrderAmount",
+        "[].maxOrderQty",
+        "[].maxPositionNum",
+        "[].maxProductOrderNum",
+        "[].maxSymbolOrderNum",
+        "[].minOrderAmount",
+        "[].minOrderQty",
+        "[].pricePrecision",
+        "[].quantityPrecision",
+        "[].quoteCoin",
+        "[].quotePrecision",
+        "[].sellLimitPriceRatio",
+        "[].status",
+        "[].symbol",
+        "[].symbolType"
+      ],
+      "note": null,
+      "sample": [
+        {
+          "symbol": "RNVDAUSDT",
+          "category": "SPOT",
+          "baseCoin": "rNVDA",
+          "quoteCoin": "USDT",
+          "symbolType": "stock",
+          "buyLimitPriceRatio": "0.1",
+          "sellLimitPriceRatio": "0.1",
+          "minOrderQty": "0.0001",
+          "maxOrderQty": "0",
+          "pricePrecision": "2",
+          "quantityPrecision": "4",
+          "quotePrecision": "6",
+          "minOrderAmount": "10",
+          "maxMarketOrderAmount": "1000000",
+          "maxSymbolOrderNum": "",
+          "maxProductOrderNum": "400",
+          "status": "online",
+          "maintainTime": "",
+          "areaSymbol": "yes",
+          "maxPositionNum": "200",
+          "isReality": "yes",
+          "launchTime": "1776914552903"
+        }
+      ]
+    },
+    {
+      "id": "rtoken_ticker",
+      "method": "GET",
+      "endpoint": "/api/v3/market/tickers?category=SPOT&symbol=RNVDAUSDT",
+      "authenticated": false,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:29.724446+00:00",
+      "provider_ts": "2026-10-06T23:55:29.902000+00:00",
+      "raw_payload_hash": "sha256:a055b2f7f722a9557e7108b038d382a4a8839d0013320215be3b4c8d002ac452",
+      "data_field_paths": [
+        "[].ask1Price",
+        "[].ask1Size",
+        "[].bid1Price",
+        "[].bid1Size",
+        "[].category",
+        "[].highPrice24h",
+        "[].lastPrice",
+        "[].lowPrice24h",
+        "[].openPrice24h",
+        "[].platformTurnover24h",
+        "[].price24hPcnt",
+        "[].symbol",
+        "[].ts",
+        "[].turnover24h",
+        "[].volume24h"
+      ],
+      "note": null,
+      "sample": [
+        {
+          "category": "SPOT",
+          "symbol": "RNVDAUSDT",
+          "ts": "1791330928454",
+          "lastPrice": "240.09",
+          "openPrice24h": "240.13",
+          "highPrice24h": "241.74",
+          "lowPrice24h": "238.93",
+          "ask1Price": "240.14",
+          "bid1Price": "240.06",
+          "bid1Size": "234",
+          "ask1Size": "3",
+          "price24hPcnt": "-0.00017",
+          "volume24h": "59314707.8286",
+          "turnover24h": "14224481074.2075",
+          "platformTurnover24h": "708273.7544"
+        }
+      ]
+    },
+    {
+      "id": "rtoken_candles",
+      "method": "GET",
+      "endpoint": "/api/v3/market/candles?category=SPOT&symbol=RNVDAUSDT&interval=1m&limit=5",
+      "authenticated": false,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:30.550711+00:00",
+      "provider_ts": "2026-10-06T23:55:30.706000+00:00",
+      "raw_payload_hash": "sha256:758a6f40888779d1236a92569ec498a30971de9e6997ffdbdc40a938aac34c48",
+      "data_field_paths": [],
+      "note": null,
+      "sample": [
+        [
+          "1791330660000",
+          "240.0888",
+          "240.0888",
+          "240.05",
+          "240.07",
+          "117",
+          "28088.3836"
+        ],
+        [
+          "1791330720000",
+          "240.07",
+          "240.1",
+          "240.06",
+          "240.08",
+          "9290",
+          "2230163.0949"
+        ],
+        [
+          "1791330780000",
+          "240.1",
+          "240.1",
+          "240.08",
+          "240.1",
+          "6571",
+          "1577611.2976"
+        ]
+      ]
+    },
+    {
+      "id": "rtoken_public_orderbook",
+      "method": "GET",
+      "endpoint": "/api/v3/market/orderbook?category=SPOT&symbol=RNVDAUSDT&limit=5",
+      "authenticated": false,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:31.330611+00:00",
+      "provider_ts": "2026-10-06T23:55:31.508000+00:00",
+      "raw_payload_hash": "sha256:de87491ca61a686052c3238a89e3fe0dd674156ce5fad2ac0b0540cb5266f2d2",
+      "data_field_paths": [
+        "a",
+        "b",
+        "ts"
+      ],
+      "note": "Public UTA order book; checked to see whether it serves rTokens at all (distinct from the whitelisted Reality book).",
+      "sample": {
+        "a": [
+          [
+            240.2,
+            100.8
+          ],
+          [
+            240.22,
+            96.0
+          ],
+          [
+            240.23,
+            92.16
+          ]
+        ],
+        "b": [
+          [
+            240.18,
+            0.6293
+          ],
+          [
+            240.16,
+            1.2353
+          ],
+          [
+            240.01,
+            115.2
+          ]
+        ],
+        "ts": "1791330931510"
+      }
+    },
+    {
+      "id": "crypto_perp_ticker",
+      "method": "GET",
+      "endpoint": "/api/v3/market/tickers?category=USDT-FUTURES&symbol=BTCUSDT",
+      "authenticated": false,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:32.150803+00:00",
+      "provider_ts": "2026-10-06T23:55:32.336000+00:00",
+      "raw_payload_hash": "sha256:2019f685b4a6ff95f6d4785dd1115f46cb1453ea81ca674bd94b417fab06ef10",
+      "data_field_paths": [
+        "[].ask1Price",
+        "[].ask1Size",
+        "[].bid1Price",
+        "[].bid1Size",
+        "[].category",
+        "[].deliveryStartTime",
+        "[].deliveryStatus",
+        "[].deliveryTime",
+        "[].fundingRate",
+        "[].highPrice24h",
+        "[].indexPrice",
+        "[].lastPrice",
+        "[].lowPrice24h",
+        "[].markPrice",
+        "[].openInterest",
+        "[].openPrice24h",
+        "[].price24hPcnt",
+        "[].symbol",
+        "[].ts",
+        "[].turnover24h",
+        "[].volume24h"
+      ],
+      "note": null,
+      "sample": [
+        {
+          "category": "USDT-FUTURES",
+          "symbol": "BTCUSDT",
+          "ts": "1791330931688",
+          "lastPrice": "85553.1",
+          "openPrice24h": "85792.7",
+          "highPrice24h": "86660",
+          "lowPrice24h": "85095.7",
+          "ask1Price": "85553.1",
+          "bid1Price": "85553",
+          "bid1Size": "0.1574",
+          "ask1Size": "9.5736",
+          "price24hPcnt": "-0.00279",
+          "volume24h": "26937.5147",
+          "turnover24h": "2312689962.54528",
+          "indexPrice": "85586.497",
+          "markPrice": "85553.2",
+          "fundingRate": "0.000096",
+          "openInterest": "31661.7768999999797",
+          "deliveryStartTime": "",
+          "deliveryTime": "",
+          "deliveryStatus": ""
+        }
+      ]
+    },
+    {
+      "id": "position_tier",
+      "method": "GET",
+      "endpoint": "/api/v3/market/position-tier?category=USDT-FUTURES&symbol=BTCUSDT",
+      "authenticated": false,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:32.660285+00:00",
+      "provider_ts": "2026-10-06T23:55:32.833000+00:00",
+      "raw_payload_hash": "sha256:342a705b246480bfda0943ff70d74d2b8441dc3f72cb9907eed9f1fc8087601a",
+      "data_field_paths": [
+        "[].leverage",
+        "[].maxTierValue",
+        "[].minTierValue",
+        "[].mmr",
+        "[].tier"
+      ],
+      "note": null,
+      "sample": [
+        {
+          "tier": "1",
+          "minTierValue": "0",
+          "maxTierValue": "200000",
+          "leverage": "150",
+          "mmr": "0.004"
+        },
+        {
+          "tier": "2",
+          "minTierValue": "200000",
+          "maxTierValue": "1000000",
+          "leverage": "100",
+          "mmr": "0.005"
+        },
+        {
+          "tier": "3",
+          "minTierValue": "1000000",
+          "maxTierValue": "5000000",
+          "leverage": "75",
+          "mmr": "0.007"
+        }
+      ]
+    },
+    {
+      "id": "discount_rate",
+      "method": "GET",
+      "endpoint": "/api/v3/market/discount-rate",
+      "authenticated": false,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:33.429965+00:00",
+      "provider_ts": "2026-10-06T23:55:33.610000+00:00",
+      "raw_payload_hash": "sha256:b5b1d197d7462567b2ff13f8acc520336c874b1528e6965886aca838ce64063a",
+      "data_field_paths": [
+        "[].coin",
+        "[].list",
+        "[].list[].discountRate",
+        "[].list[].tierStartValue"
+      ],
+      "note": "Candidate source of tiered collateral ratios.",
+      "sample": [
+        {
+          "coin": "rSPY",
+          "list": [
+            {
+              "tierStartValue": "0",
+              "discountRate": "0.95"
+            },
+            {
+              "tierStartValue": "500000",
+              "discountRate": "0.94"
+            },
+            {
+              "tierStartValue": "1000000",
+              "discountRate": "0.93"
+            },
+            {
+              "tierStartValue": "2000000",
+              "discountRate": "0.92"
+            },
+            {
+              "tierStartValue": "3000000",
+              "discountRate": "0.91"
+            },
+            {
+              "tierStartValue": "4000000",
+              "discountRate": "0.9"
+            },
+            {
+              "tierStartValue": "5000000",
+              "discountRate": "0.85"
+            },
+            {
+              "tierStartValue": "10000000",
+              "discountRate": "0.8"
+            },
+            {
+              "tierStartValue": "20000000",
+              "discountRate": "0.75"
+            },
+            {
+              "tierStartValue": "30000000",
+              "discountRate": "0.7"
+            },
+            {
+              "tierStartValue": "50000000",
+              "discountRate": "0"
+            }
+          ]
+        },
+        {
+          "coin": "rMSFT",
+          "list": [
+            {
+              "tierStartValue": "0",
+              "discountRate": "0.95"
+            },
+            {
+              "tierStartValue": "500000",
+              "discountRate": "0.94"
+            },
+            {
+              "tierStartValue": "1000000",
+              "discountRate": "0.93"
+            },
+            {
+              "tierStartValue": "2000000",
+              "discountRate": "0.92"
+            },
+            {
+              "tierStartValue": "3000000",
+              "discountRate": "0.91"
+            },
+            {
+              "tierStartValue": "4000000",
+              "discountRate": "0.9"
+            },
+            {
+              "tierStartValue": "5000000",
+              "discountRate": "0.85"
+            },
+            {
+              "tierStartValue": "10000000",
+              "discountRate": "0.8"
+            },
+            {
+              "tierStartValue": "20000000",
+              "discountRate": "0.75"
+            },
+            {
+              "tierStartValue": "30000000",
+              "discountRate": "0.7"
+            },
+            {
+              "tierStartValue": "50000000",
+              "discountRate": "0"
+            }
+          ]
+        },
+        {
+          "coin": "rINTC",
+          "list": [
+            {
+              "tierStartValue": "0",
+              "discountRate": "0.95"
+            },
+            {
+              "tierStartValue": "500000",
+              "discountRate": "0.94"
+            },
+            {
+              "tierStartValue": "1000000",
+              "discountRate": "0.93"
+            },
+            {
+              "tierStartValue": "2000000",
+              "discountRate": "0.92"
+            },
+            {
+              "tierStartValue": "3000000",
+              "discountRate": "0.91"
+            },
+            {
+              "tierStartValue": "4000000",
+              "discountRate": "0.9"
+            },
+            {
+              "tierStartValue": "5000000",
+              "discountRate": "0.85"
+            },
+            {
+              "tierStartValue": "10000000",
+              "discountRate": "0.8"
+            },
+            {
+              "tierStartValue": "20000000",
+              "discountRate": "0.75"
+            },
+            {
+              "tierStartValue": "30000000",
+              "discountRate": "0.7"
+            },
+            {
+              "tierStartValue": "50000000",
+              "discountRate": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "custom_collateral_coins",
+      "method": "GET",
+      "endpoint": "/api/v3/account/custom-collateral-coins",
+      "authenticated": false,
+      "status": "UNVERIFIED",
+      "reason": "HTTP 400, code 40006: Invalid ACCESS_KEY",
+      "http_status": 400,
+      "code": "40006",
+      "msg": "Invalid ACCESS_KEY",
+      "request_ts": "2026-10-06T23:55:34.344933+00:00",
+      "provider_ts": "2026-10-06T23:55:34.531000+00:00",
+      "raw_payload_hash": "sha256:a687700f7b62f2eccadf94d203fcf51d75aa604fc941ee8d2d52e424cc4578d2",
+      "data_field_paths": [],
+      "note": "Listed as public by CCXT; also probed authenticated below."
+    },
+    {
+      "id": "account_info",
+      "method": "GET",
+      "endpoint": "/api/v3/account/info",
+      "authenticated": true,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:34.933170+00:00",
+      "provider_ts": "2026-10-06T23:55:35.124000+00:00",
+      "raw_payload_hash": "sha256:103f26d8e9cc1219a1e37515fbb463fff2fa3fb3d329964a82d30d997aae0f2b",
+      "data_field_paths": [
+        "channel",
+        "channelCode",
+        "inviterId",
+        "ips",
+        "parentId",
+        "permType",
+        "permissions",
+        "regisTime",
+        "userId"
+      ],
+      "note": "Used to confirm the key's permission scope."
+    },
+    {
+      "id": "account_settings",
+      "method": "GET",
+      "endpoint": "/api/v3/account/settings",
+      "authenticated": true,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:35.497617+00:00",
+      "provider_ts": "2026-10-06T23:55:35.674000+00:00",
+      "raw_payload_hash": "sha256:8e82c0dfe9da5ea2459744d28dacd3fb59cc5042b99ebf3cda6f10aacc1491d3",
+      "data_field_paths": [
+        "accountLevel",
+        "accountMode",
+        "assetMode",
+        "coinConfigList",
+        "deltaSwitch",
+        "holdMode",
+        "repayMode",
+        "stpMode",
+        "symbolConfigList",
+        "uid"
+      ],
+      "note": null
+    },
+    {
+      "id": "account_assets",
+      "method": "GET",
+      "endpoint": "/api/v3/account/assets",
+      "authenticated": true,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:36.349336+00:00",
+      "provider_ts": "2026-10-06T23:55:36.527000+00:00",
+      "raw_payload_hash": "sha256:b0d15b02a7d0f8b732381ef503d81f5efda1dd4c3d108638ef471db0c145761a",
+      "data_field_paths": [
+        "accountEquity",
+        "assets",
+        "btcEquity",
+        "btcUnrealizedPnl",
+        "effEquity",
+        "imr",
+        "leverage",
+        "mgnRatio",
+        "mmr",
+        "positionMgnRatio",
+        "positionValue",
+        "unrealisedPnl",
+        "usdtEquity",
+        "usdtUnrealisedPnl"
+      ],
+      "note": null
+    },
+    {
+      "id": "positions",
+      "method": "GET",
+      "endpoint": "/api/v3/position/current-position?category=USDT-FUTURES",
+      "authenticated": true,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:37.166979+00:00",
+      "provider_ts": "2026-10-06T23:55:37.347000+00:00",
+      "raw_payload_hash": "sha256:9e03ba2907fd5570a13840105a550a26c68c57318510dd1b7f7521ae020f97e1",
+      "data_field_paths": [
+        "list"
+      ],
+      "note": null
+    },
+    {
+      "id": "collateral_type",
+      "method": "GET",
+      "endpoint": "/api/v3/account/collateral-type",
+      "authenticated": true,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:37.685362+00:00",
+      "provider_ts": "2026-10-06T23:55:37.882000+00:00",
+      "raw_payload_hash": "sha256:fb210882e17c5ede34f47102ea387fd884537cd75c2df8cf7d1eadb5c375cfa4",
+      "data_field_paths": [
+        "collateralCoins",
+        "collateralType"
+      ],
+      "note": null,
+      "sample": {
+        "collateralType": "custom",
+        "collateralCoins": "USDT,USDC"
+      }
+    },
+    {
+      "id": "custom_collateral_coins_auth",
+      "method": "GET",
+      "endpoint": "/api/v3/account/custom-collateral-coins",
+      "authenticated": true,
+      "status": "VERIFIED",
+      "reason": "Response returned code 00000.",
+      "http_status": 200,
+      "code": "00000",
+      "msg": "success",
+      "request_ts": "2026-10-06T23:55:38.697193+00:00",
+      "provider_ts": "2026-10-06T23:55:38.881000+00:00",
+      "raw_payload_hash": "sha256:b8cc2f542396edaeb0ece75119da0900910537972f616d800e98505c73e3d75f",
+      "data_field_paths": [
+        "[].collateralCoin"
+      ],
+      "note": null,
+      "sample": [
+        {
+          "collateralCoin": "USDT"
+        },
+        {
+          "collateralCoin": "USDC"
+        },
+        {
+          "collateralCoin": "BTC"
+        }
+      ]
+    },
+    {
+      "id": "eligible_discount_rate",
+      "method": "GET",
+      "endpoint": "/api/v3/account/eligible-discount-rate",
+      "authenticated": true,
+      "status": "UNVERIFIED",
+      "reason": "Endpoint not served to this key/environment (404); this is not evidence of a whitelist refusal. HTTP 404, code 40404: Request URL NOT FOUND",
+      "http_status": 404,
+      "code": "40404",
+      "msg": "Request URL NOT FOUND",
+      "request_ts": "2026-10-06T23:55:39.625788+00:00",
+      "provider_ts": "2026-10-06T23:55:39.813000+00:00",
+      "raw_payload_hash": "sha256:48b6d9c3035ef627993d5c273acf0ef9255ec8051668bf9dcc1af9c4ab9239ed",
+      "data_field_paths": [],
+      "note": "Candidate source of account-specific tiered collateral ratios."
+    },
+    {
+      "id": "fee_rate",
+      "method": "GET",
+      "endpoint": "/api/v3/account/fee-rate?category=USDT-FUTURES&symbol=BTCUSDT",
+      "authenticated": true,
+      "status": "UNVERIFIED",
+      "reason": "Endpoint not served to this key/environment (404); this is not evidence of a whitelist refusal. HTTP 404, code 40404: Request URL NOT FOUND",
+      "http_status": 404,
+      "code": "40404",
+      "msg": "Request URL NOT FOUND",
+      "request_ts": "2026-10-06T23:55:40.535980+00:00",
+      "provider_ts": "2026-10-06T23:55:40.731000+00:00",
+      "raw_payload_hash": "sha256:fa21d7ea68b59e179afa4db1bffeb4345bf6cabfccc91f465761f91330b17b32",
+      "data_field_paths": [],
+      "note": null
+    },
+    {
+      "id": "reality_depth",
+      "method": "GET",
+      "endpoint": "/api/v3/account/reality-orderbook?symbol=RNVDAUSDT",
+      "authenticated": true,
+      "status": "UNVERIFIED",
+      "reason": "Endpoint not served to this key/environment (404); this is not evidence of a whitelist refusal. HTTP 404, code 40404: Request URL NOT FOUND",
+      "http_status": 404,
+      "code": "40404",
+      "msg": "Request URL NOT FOUND",
+      "request_ts": "2026-10-06T23:55:41.365353+00:00",
+      "provider_ts": "2026-10-06T23:55:41.548000+00:00",
+      "raw_payload_hash": "sha256:503a0b79656ec5faf880b6e71c7af58fc9675bb04800edee41dace6c59a03906",
+      "data_field_paths": [],
+      "note": null
+    },
+    {
+      "id": "reality_fills",
+      "method": "GET",
+      "endpoint": "/api/v3/account/reality-fills?symbol=RNVDAUSDT",
+      "authenticated": true,
+      "status": "UNVERIFIED",
+      "reason": "Endpoint not served to this key/environment (404); this is not evidence of a whitelist refusal. HTTP 404, code 40404: Request URL NOT FOUND",
+      "http_status": 404,
+      "code": "40404",
+      "msg": "Request URL NOT FOUND",
+      "request_ts": "2026-10-06T23:55:42.286463+00:00",
+      "provider_ts": "2026-10-06T23:55:42.466000+00:00",
+      "raw_payload_hash": "sha256:8944184347aadf453d1a6897d36ab222c49900fba02a0832506429bde93a33af",
+      "data_field_paths": [],
+      "note": null
+    }
+  ],
+  "websocket": {
+    "login_ok": true,
+    "login_timestamp_unit": "s",
+    "login_response": {
+      "event": "login",
+      "code": 0,
+      "connId": "0a07e9fffe0c7f4f-0000eabc-0032f8da-714c8d44bf7153a4-4b5e8b7f"
+    },
+    "subscribe_responses": [
+      {
+        "event": "subscribe",
+        "arg": {
+          "instType": "UTA",
+          "topic": "account"
+        },
+        "connId": "0a07e9fffe0c7f4f-0000eabc-0032f8da-714c8d44bf7153a4-4b5e8b7f"
+      },
+      {
+        "event": "subscribe",
+        "arg": {
+          "instType": "UTA",
+          "topic": "position"
+        },
+        "connId": "0a07e9fffe0c7f4f-0000eabc-0032f8da-714c8d44bf7153a4-4b5e8b7f"
+      }
+    ],
+    "error": null,
+    "topics": {
+      "account": {
+        "push_count": 1,
+        "data_field_paths": [
+          "[].coin",
+          "[].effEquity",
+          "[].imr",
+          "[].mgnRatio",
+          "[].mmr",
+          "[].positionMgnRatio",
+          "[].totalEquity",
+          "[].unrealisedPnL"
+        ],
+        "missing_spec_fields": [
+          "balance",
+          "balanceOriginal",
+          "equity",
+          "usdValue",
+          "available",
+          "borrow",
+          "debts"
+        ]
+      },
+      "position": {
+        "push_count": 1,
+        "data_field_paths": [],
+        "missing_spec_fields": [
+          "leverage",
+          "unrealisedPnl",
+          "liqPrice",
+          "mmr",
+          "marginRate",
+          "markPrice"
+        ]
+      }
+    }
+  }
+}
