@@ -62,30 +62,38 @@ def liquidity_history(root: Path, days: int = 7) -> dict[str, dict[str, list[Dec
     return _cached(f"liq:{root}:{days}", build)
 
 
-def closure_windows(root: Path, days: int = 30) -> dict[str, int]:
-    """Per symbol: closure windows (overnight or weekend) observed from start through reopen.
+def next_reopen(boundary: datetime) -> datetime:
+    """04:00 New York on the next weekday after a 20:00 boundary (weekends skipped; holidays not)."""
+    day = boundary.astimezone(NY) + timedelta(days=1)
+    while day.weekday() >= 5:
+        day += timedelta(days=1)
+    return day.replace(hour=4, minute=0, second=0, microsecond=0)
 
-    A window starting at a 20:00 New York boundary counts once the capture holds observations
-    both inside the closure and at or after the following 04:00 New York reopen.
-    """
+
+def count_windows(times: list[datetime]) -> int:
+    """Closure windows (one per 20:00 boundary, so a weekend counts once) observed inside and after reopen."""
+    from .engine import last_extended_close
+
+    times = sorted(times)
+    if not times:
+        return 0
+    boundaries: set[datetime] = set()
+    for t in times:
+        local = t.astimezone(NY)
+        b = last_extended_close(t, None)
+        if local < next_reopen(b):  # inside the closure that began at b
+            boundaries.add(b)
+    latest = times[-1]
+    return sum(1 for b in boundaries if latest >= next_reopen(b))
+
+
+def closure_windows(root: Path, days: int = 30) -> dict[str, int]:
+    """Per symbol: closure windows observed from inside the closure through the following reopen."""
     def build():
-        seen: dict[str, set[str]] = defaultdict(set)
+        seen: dict[str, list[datetime]] = defaultdict(list)
         for row in _lines(root, "tickers", days):
             if row.get("category") != "SPOT" or not row.get("meta", {}).get("ok"):
                 continue
-            at = datetime.fromisoformat(row["meta"]["retrieved_at"]).astimezone(NY)
-            seen[row["symbol"]].add(at.strftime("%Y-%m-%dT%H"))
-        counts: dict[str, int] = {}
-        for symbol, hours in seen.items():
-            days_seen = sorted({h[:10] for h in hours})
-            n = 0
-            for d in days_seen:
-                inside = any(f"{d}T{hh:02d}" in hours for hh in (20, 21, 22, 23))
-                nxt = (datetime.fromisoformat(d) + timedelta(days=1)).strftime("%Y-%m-%d")
-                reopened = any(h.startswith(nxt) and int(h[11:13]) >= 4 for h in hours) or any(
-                    h[:10] > nxt for h in hours)
-                if inside and reopened:
-                    n += 1
-            counts[symbol] = n
-        return counts
+            seen[row["symbol"]].append(datetime.fromisoformat(row["meta"]["retrieved_at"]))
+        return {symbol: count_windows(times) for symbol, times in seen.items()}
     return _cached(f"win:{root}:{days}", build)

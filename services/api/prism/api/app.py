@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import re
 import time
 from decimal import Decimal
 from enum import Enum
@@ -16,7 +17,7 @@ from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..config import REPO_ROOT, load_env_file, load_settings
 from ..connectors.bitget import BitgetClient
@@ -28,6 +29,9 @@ from ..workbench import JUDGE_FIXTURE, Workbench, attach_crypto_betas, bitget_wo
 from .. import pretrade, repair, wrong_way
 
 STATIC = Path(__file__).parent / "static"
+# Symbols flow into upstream URLs (e.g. Yahoo's path), so only plain tickers are accepted.
+RTOKEN_SYMBOL = re.compile(r"R[A-Z0-9]{1,10}USDT")
+TICKER = re.compile(r"[A-Z]{1,6}(\.[A-Z])?")
 CACHE_SECONDS = 60
 Account = Literal["judge", "bitget"]
 
@@ -91,6 +95,9 @@ def rate_limit(request: Request, kind: str) -> None:
             raise HTTPException(429, "PRISM is busy; the hourly analysis budget is used up. Please try again later.")
         _hits["pretrade:*"] = total + [now]
     _hits[key] = recent + [now]
+    if len(_hits) > 5000:  # drop visitors with no requests inside their window
+        for k in [k for k, v in _hits.items() if not v or now - v[-1] > 3600]:
+            del _hits[k]
 
 
 def jsonable(value: Any) -> Any:
@@ -109,12 +116,21 @@ def jsonable(value: Any) -> Any:
     return value
 
 
+CACHE_MAX_ENTRIES = 500  # public traffic must not grow memory without bound
+
+
 def cached(key: str, build):
+    now = time.monotonic()
     hit = _cache.get(key)
-    if hit and time.monotonic() - hit[0] < CACHE_SECONDS:
+    if hit and now - hit[0] < CACHE_SECONDS:
         return hit[1]
     value = build()
-    _cache[key] = (time.monotonic(), value)
+    if len(_cache) >= CACHE_MAX_ENTRIES:
+        for stale in [k for k, (t, _) in _cache.items() if now - t >= CACHE_SECONDS]:
+            del _cache[stale]
+        while len(_cache) >= CACHE_MAX_ENTRIES:
+            del _cache[min(_cache, key=lambda k: _cache[k][0])]
+    _cache[key] = (now, value)
     return value
 
 
@@ -164,6 +180,8 @@ def get_workbench(request: Request, account: Account = "judge") -> dict[str, Any
 @app.get("/api/frontier")
 def get_frontier(request: Request, account: Account = "judge", boundary: Decimal = Decimal("0.80")) -> dict[str, Any]:
     guard_account(request, account)
+    if not boundary.is_finite() or not Decimal("0.05") <= boundary <= Decimal("5"):
+        raise HTTPException(400, "boundary must be a ratio between 0.05 and 5 (e.g. 0.80)")
     wb = workbench(account)
     if not (wb.holdings or wb.positions):
         return {"empty": True, "baseline_label": wb.baseline.label, "message": "Account holds nothing yet; there is no frontier to draw."}
@@ -182,7 +200,7 @@ def get_frontier(request: Request, account: Account = "judge", boundary: Decimal
 
 
 class PreTradeRequest(BaseModel):
-    text: str
+    text: str = Field(min_length=3, max_length=500)  # bounds Qwen cost per request
     account: Account = "judge"
     explain: bool = True
 
@@ -260,6 +278,8 @@ def post_repair(req: RepairRequest, request: Request) -> dict[str, Any]:
 
 @app.get("/api/research/{underlying}")
 def get_research(underlying: str) -> dict[str, Any]:
+    if not TICKER.fullmatch(underlying.upper()):
+        raise HTTPException(400, "not a U.S. ticker")
     mcp = BitgetDataMCP()
     return {"quote": jsonable(mcp.underlying_quote(underlying.upper())), "earnings": jsonable(mcp.earnings_calendar(underlying.upper()))}
 
@@ -272,8 +292,8 @@ def get_reality(symbols: str = "RNVDAUSDT,RSPYUSDT,RCOINUSDT,RMSTRUSDT") -> dict
     wanted = [s.strip().upper() for s in symbols.split(",") if s.strip()][:12]
     out = {}
     for symbol in wanted:
-        if not (symbol.startswith("R") and symbol.endswith("USDT")):
-            raise HTTPException(400, f"{symbol} is not an rToken symbol")
+        if not RTOKEN_SYMBOL.fullmatch(symbol):
+            raise HTTPException(400, "not an rToken symbol (expected e.g. RNVDAUSDT)")
         try:
             out[symbol] = cached(f"reality:{symbol}", lambda s=symbol: jsonable(envelope(_client, s, REPO_ROOT / "data" / "capture")))
         except Exception as exc:  # one failing symbol must not hide the others
@@ -287,8 +307,8 @@ def get_reality_series(symbol: str, minutes: int = 240) -> dict[str, Any]:
     from ..reality.live import series
 
     symbol = symbol.upper()
-    if not (symbol.startswith("R") and symbol.endswith("USDT")):
-        raise HTTPException(400, f"{symbol} is not an rToken symbol")
+    if not RTOKEN_SYMBOL.fullmatch(symbol):
+        raise HTTPException(400, "not an rToken symbol (expected e.g. RNVDAUSDT)")
     return cached(f"series:{symbol}:{minutes}", lambda: series(_client, symbol, max(30, min(minutes, 1000))))
 
 

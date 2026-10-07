@@ -76,7 +76,11 @@ def apply_trade(client: BitgetClient, wb: Workbench, trade: ProposedTrade) -> tu
         raise TradeRejected("The visible order book cannot fill this size.")
 
     positions = list(wb.positions)
-    existing = next((i for i, p in enumerate(positions) if p.symbol == trade.instrument), None)
+    # In hedge mode a long and a short on the same symbol are separate positions and never net
+    # (account holdMode verified 2026-10-07); in one-way mode the trade nets against the position.
+    hedge = wb.snapshot is not None and wb.snapshot.hold_mode == "hedge_mode"
+    same = (lambda p: p.symbol == trade.instrument and p.direction == direction) if hedge else (lambda p: p.symbol == trade.instrument)
+    existing = next((i for i, p in enumerate(positions) if same(p)), None)
     if existing is None:
         net_size, net_dir = size, direction
     else:
@@ -87,7 +91,7 @@ def apply_trade(client: BitgetClient, wb: Workbench, trade: ProposedTrade) -> tu
     if net_size > 0:
         positions.append(PerpPosition(trade.instrument, net_dir, net_size, mark, perp_factor(client, trade.instrument, wb.schedules, demo), mmr,
                                       f"{mark_source}; mmr {mmr_source}"))
-    old_mm = sum((abs(p.size) * p.mark_price * (p.mmr_rate or 0) for p in wb.positions if p.symbol == trade.instrument), Decimal(0))
+    old_mm = sum((abs(p.size) * p.mark_price * (p.mmr_rate or 0) for p in wb.positions if same(p)), Decimal(0))
     new_mm = net_size * mark * (mmr or 0)
     baseline = replace(wb.baseline, effective_equity=wb.baseline.effective_equity - w.slippage_cost,
                        maintenance_margin=wb.baseline.maintenance_margin - old_mm + new_mm,

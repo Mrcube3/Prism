@@ -35,3 +35,31 @@ Scope: `prism/reality/{engine,history,live}.py`, `GET /api/reality`, `GET /api/r
 5. Liquidity percentiles mix overnight, weekend and regular-session books; closure-only percentiles would be more faithful to §24.
 6. Yahoo (unofficial) now drives the reference proxy and live agreement. Check the 16-hour session guard in `underlying_reference()`, delayed-quote risk, and that the UI labels the source wherever it appears.
 7. SEC 8-K window = reference time − 3 days. Does a stale 8-K wrongly turn an unrelated weekend move into DISCOVERY (`EVENT_SUPPORTED`)? Consider requiring the filing to fall after the last regular close.
+
+## Review outcomes (2026-10-07)
+
+Fixed (regression tests in `services/api/tests/test_audit.py`; 78 tests pass):
+
+| Item | Finding | Fix |
+| --- | --- | --- |
+| Engines #3 | Spelled-out quantities ("five percent", "two million dollars") passed the explainer's number check. | Number words next to a unit are always rejected. |
+| Reality #4 | A weekend closure was counted once per calendar day, inflating "data support". | Windows are counted once per 20:00 boundary and only after the following reopen is observed. |
+| Reality #7 | An 8-K filed days before the frozen reference could mark an unrelated weekend move as event-supported DISCOVERY. | Window now starts at the regular close (reference − 4 h); earlier filings are already priced into the reference. |
+| New | Pre-Trade Gate netted a proposed long against an existing short even in **hedge mode** (the demo account's mode). | Same-direction merge only in hedge mode; one-way mode still nets. |
+| New | `/api/reality` symbols flowed into Yahoo's URL path with only a prefix/suffix check. | Strict `R[A-Z0-9]{1,10}USDT` / ticker patterns. |
+| New | `/api/frontier?boundary=NaN` (or absurd values) raised a 500. | Validated to 0.05–5. |
+| New | Pre-Trade text was unbounded (Qwen cost) and the response cache and rate-limit table grew without limit under public traffic. | Text 3–500 chars; cache capped at 500 entries; idle visitors pruned. |
+
+Checked, no change needed:
+
+- M0/M1 #1–#4: the `VERIFIED` = "returned 00000" caveat is stated in BITGET_VERIFICATION.md. `sanitize()` covers the identifiers seen in real payloads; the published report holds field paths and permission scope only. WebSocket errors carry the exception type and message, never the signed payload. Demo data is rejected if labelled LIVE (tested).
+- M0/M1 #5: the old TypeScript app is not part of PRISM's published repo.
+- Engines #1: several hypotheses matching at once still means PRISM reproduced Bitget's number; RECONCILED stays, with the ambiguity reported in the reasons.
+- Engines #4: Judge Mode's baseline is labelled `HYPOTHETICAL`, never RECONCILED.
+- Reality #6: Yahoo is used only within a 16-hour session guard and a 15-minute freshness limit, labelled "unofficial" in the UI and the provenance.
+
+Still open (design limits, not bugs):
+
+- Engines #2: MM rescales linearly and ignores tier jumps (flagged as CONSERVATIVE_APPROXIMATION in every result).
+- Engines #5: stock perps share the rToken/equity axis although their marks trade 24/7.
+- Reality #1–#3, #5: proxy accuracy, hand-set thresholds and session-mixed liquidity percentiles all need closure history; revisit with the thaw experiment and M11 validation.

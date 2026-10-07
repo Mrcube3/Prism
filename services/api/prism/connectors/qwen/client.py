@@ -171,11 +171,22 @@ def numbers_in(text: str) -> set[Decimal]:
     return {d.copy_abs().normalize() for d in (_to_decimal(m.group()) for m in _NUMBER.finditer(text)) if d is not None}
 
 
+_NUMBER_WORDS = re.compile(
+    r"\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|forty|fifty|"
+    r"sixty|seventy|eighty|ninety|hundred|thousand|million|billion|half|quarter|double|triple)\b"
+    r"(?=[\s-]*(?:percent|per cent|times|x\b|bps|basis|dollars|usd|usdt|btc|%|hundred|thousand|million|billion))",
+    re.IGNORECASE,
+)
+
+
 def unsupported_numbers(answer: str, source: str) -> list[str]:
-    """Numbers in `answer` absent from `source` (compared by value, sign-insensitive; percent/fraction forms allowed)."""
+    """Numbers in `answer` absent from `source` (compared by value, sign-insensitive; percent/fraction forms allowed).
+
+    Spelled-out quantities ("five percent", "two million dollars") are always rejected: the explainer
+    must quote PRISM's figures verbatim, never paraphrase them into words."""
     allowed = numbers_in(source)
     allowed |= {(a * 100).normalize() for a in allowed} | {(a / 100).normalize() for a in allowed}
-    out = []
+    out = [m.group() for m in _NUMBER_WORDS.finditer(answer)]
     for m in _NUMBER.finditer(answer):
         value = _to_decimal(m.group())
         if value is not None and value.copy_abs().normalize() not in allowed:

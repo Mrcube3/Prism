@@ -177,7 +177,7 @@ function renderMarket(){
  $("price-facts").innerHTML=facts.map(([k,v])=>'<div><small>'+k+'</small><b>'+v+'</b></div>').join("");
  const liq=e?.liquidity||{},quality=e?.market_quality,q=quality==="UNAVAILABLE"&&liq.spread_bps!=null?"Spread "+num(liq.spread_bps).toFixed(1)+" bp":label(quality);
  const agree=e?.reference_agreement,gap=e?.reference_gap_bps!=null?" · "+(num(e.reference_gap_bps)>0?"+":"")+num(e.reference_gap_bps).toFixed(0)+" bp":"";
- const evs=e?.event_support||"",evText=evs==="PRIMARY_EVENT"?(e.events||[]).length+" SEC 8-K filing"+((e.events||[]).length>1?"s":""):evs==="NO_FILING"?"No 8-K (SEC, 3 days)":evs==="NOT_APPLICABLE"?"Not a filer (ETF)":evs.startsWith("UNAVAILABLE")?"UNAVAILABLE":label(evs);
+ const evs=e?.event_support||"",evText=evs==="PRIMARY_EVENT"?(e.events||[]).length+" SEC 8-K filing"+((e.events||[]).length>1?"s":""):evs==="NO_FILING"?"No 8-K since 16:00 NY":evs==="NOT_APPLICABLE"?"Not a filer (ETF)":evs.startsWith("UNAVAILABLE")?"UNAVAILABLE":label(evs);
  const ev=[["REALITY STATE",e?.market_state==="NOT_APPLICABLE"?"REFERENCE LIVE":label(e?.market_state),"Discovery / drift / overshoot / thin / conflict: deterministic rules in prism/reality/engine.py"],
   ["EVIDENCE MODE",label(e?.evidence_mode),"OBSERVED / HYBRID / INFERRED (§23)"],
   ["LIQUIDITY QUALITY",q,quality==="UNAVAILABLE"?"Graded only against this rToken's own captured history; not enough history yet":"Ranked against this rToken's captured spread and depth"],

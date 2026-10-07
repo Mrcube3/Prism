@@ -97,5 +97,9 @@ def recent_8k(ticker: str, since: datetime, client: httpx.Client | None = None) 
 
 
 def event_window_start(reference_time: datetime) -> datetime:
-    """Events that can explain an off-hours move: from one trading day before the frozen reference."""
-    return reference_time - timedelta(days=3)
+    """Events that can explain an off-hours move against the 20:00 New York reference.
+
+    Information released before the regular close (16:00, four hours before the reference) is
+    already in the reference price, so it cannot explain a later gap; after-hours releases such as
+    earnings at 16:05 are included because after-hours trading may only partly price them."""
+    return reference_time - timedelta(hours=4)
