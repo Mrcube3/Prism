@@ -1,0 +1,26 @@
+# PRISM closure-window capture (read-only Bitget polling). Install:
+#   sudo cp deploy/prism-capture.service /etc/systemd/system/ && sudo systemctl daemon-reload
+#   sudo systemctl enable --now prism-capture
+# Resource caps keep it from competing with other services on a shared host.
+[Unit]
+Description=PRISM closure-window capture (read-only Bitget)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/prism
+ExecStart=/home/ubuntu/.local/bin/uv run --project services/api python scripts/capture_weekend.py
+Restart=always
+RestartSec=30
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=25%
+MemoryMax=300M
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
