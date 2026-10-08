@@ -1,0 +1,11 @@
+# Thaw experiment (AGENTS.md §47): records the account's recognized rToken value around the 20:00 freeze and 04:00 / 09:30 reopen.
+[Unit]
+Description=PRISM thaw experiment recorder (read-only)
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/prism
+Nice=10
+TimeoutStartSec=50min
+ExecStart=/home/ubuntu/.local/bin/uv run --project services/api python scripts/capture_thaw.py --minutes 40

@@ -10,7 +10,8 @@ from typing import Any
 
 from ..connectors.bitget import BitgetClient
 from ..connectors.bitget_data import BitgetDataMCP
-from ..connectors.us_reference import sec, yahoo
+from ..connectors.qwen import QwenClient
+from ..connectors.us_reference import news, sec, yahoo
 from ..provenance import utc_now
 from .engine import BookStats, RealityEnvelope, RealityInputs, book_stats, build_envelope, last_extended_close
 from .history import closure_windows, liquidity_history
@@ -77,16 +78,40 @@ def bitget_us_data_status() -> str:
     return _cached("bitget-us-data", 900, build)
 
 
-def events_for(underlying: str, reference_time: datetime) -> tuple[str, tuple[str, ...], str]:
-    """Primary-source event evidence from SEC EDGAR 8-K filings since shortly before the reference."""
+NEWS_SUPPORT_MATERIALITY = ("high", "medium")
+
+
+def events_for(underlying: str, reference_time: datetime, name: str | None = None,
+               allow_qwen: bool = False) -> tuple[str, tuple[str, ...], str]:
+    """Event evidence since the regular close: SEC 8-K filings (primary) and Qwen-classified headlines (secondary).
+
+    Status: PRIMARY_EVENT (8-K) > NEWS_EVENT (a relevant, company-specific headline of high/medium
+    materiality published inside the window) > NO_FILING / NOT_APPLICABLE / UNAVAILABLE.
+    """
     def build():
-        status, filings = sec.recent_8k(underlying, sec.event_window_start(reference_time))
+        since = sec.event_window_start(reference_time)
+        status, filings = sec.recent_8k(underlying, since)
+        lines = [f"SEC {f.description} · accepted {f.accepted_at.strftime('%Y-%m-%d %H:%M')} UTC" for f in filings[:3]]
+        items = news.headlines(underlying, name)
+        classifier = QwenClient(timeout=180).classify_headlines if allow_qwen else None
+        classes, news_status = news.classified(underlying, items, classifier)
+        supported = False
+        for h in items:
+            c = classes.get(h.id)
+            tag = (f"{c['event_type']}, {c['direction']}, {c['materiality']}" + ("" if c["relevant"] else ", not about this company")
+                   if c else "classification pending")
+            lines.append(f"NEWS {h.title} · {h.publisher} · {h.published_at.strftime('%Y-%m-%d %H:%M')} UTC · {tag}")
+            if c and c["relevant"] and c["event_type"] == "company_specific" and c["materiality"] in NEWS_SUPPORT_MATERIALITY and h.published_at >= since:
+                supported = True
+        sources = f"{sec.SOURCE}; {news.SOURCE}, classified by Qwen ({news_status})"
+        if status == "OK" and filings:
+            return "PRIMARY_EVENT", tuple(lines), sources
+        if supported:
+            return "NEWS_EVENT", tuple(lines), sources
         if status != "OK":
-            return status, (), sec.SOURCE
-        if not filings:
-            return "NO_FILING", (), sec.SOURCE
-        return "PRIMARY_EVENT", tuple(f"{f.description} · accepted {f.accepted_at.strftime('%Y-%m-%d %H:%M')} UTC" for f in filings[:3]), sec.SOURCE
-    return _cached(f"events:{underlying}:{reference_time.isoformat()}", 900, build)
+            return status, tuple(lines), sources
+        return "NO_FILING", tuple(lines), sources
+    return _cached(f"events:{underlying}:{reference_time.isoformat()}:{allow_qwen}", 900, build)
 
 
 def underlying_reference(underlying: str, boundary: datetime) -> tuple[Decimal | None, datetime | None, Decimal | None, datetime | None, str]:
@@ -103,7 +128,7 @@ def underlying_reference(underlying: str, boundary: datetime) -> tuple[Decimal |
     return (at[1] if at else None), (at[0] if at else None), (last[1] if last else None), (last[0] if last else None), data.source
 
 
-def envelope(client: BitgetClient, symbol: str, capture_root: Path) -> RealityEnvelope:
+def envelope(client: BitgetClient, symbol: str, capture_root: Path, allow_qwen: bool = False) -> RealityEnvelope:
     now = utc_now()
     info = stock_info(client).get(symbol, {})
     underlying = info.get("code") or symbol[1:-4]
@@ -135,9 +160,11 @@ def envelope(client: BitgetClient, symbol: str, capture_root: Path) -> RealityEn
         perp_ref, perp_src = close_at(client, "USDT-FUTURES", perp, boundary)
 
     liq = liquidity_history(capture_root).get(symbol, {"spread": [], "depth": []})
-    ev_status, ev_items, ev_src = events_for(underlying, boundary.astimezone(timezone.utc))
+    ev_status, ev_items, ev_src = events_for(underlying, boundary.astimezone(timezone.utc), info.get("name"), allow_qwen)
+    from .backfill import load_band
     from .calibration import thresholds
     th = thresholds(capture_root)
+    q05, q95, band_source, _ = load_band(capture_root.parent / "research", symbol)
     weekend = info.get("weekendTradable")
     return build_envelope(RealityInputs(
         symbol=symbol, underlying=underlying, weekend_tradable=None if weekend is None else weekend == "yes",
@@ -149,6 +176,7 @@ def envelope(client: BitgetClient, symbol: str, capture_root: Path) -> RealityEn
         event_status=ev_status, events=ev_items, reference_source=ref_kind,
         underlying_last=u_last, underlying_last_ts=u_last_t,
         agree_bps=th.agree_bps, conflict_bps=th.conflict_bps, threshold_source=th.source,
+        band_q05=q05, band_q95=q95, band_source=band_source,
         sources={"live": f"bitget:{t.endpoint}", "book": f"bitget:{b.endpoint}", "reference_proxy": ref_src,
                  "underlying": u_src, "perp_reference": perp_src, "events": ev_src,
                  "bitget_us_data": bitget_us_data_status(),

@@ -69,7 +69,7 @@ def test_corroborated_liquid_move_is_discovery_and_observed():
     e = build_envelope(base())
     assert e.regime is Regime.FROZEN_REFERENCE and e.move == D("0.1") and e.perp_move == D("0.1")
     assert e.reference_agreement == "AGREE" and e.market_state is MarketState.DISCOVERY and e.evidence_mode is EvidenceMode.OBSERVED
-    assert e.lower_stress_bound is None and "BAND_UNAVAILABLE_1_OF_8_CLOSURE_WINDOWS" in e.reason_codes
+    assert e.lower_stress_bound is None and "BAND_UNAVAILABLE_UNCALIBRATED" in e.reason_codes
 
 
 def test_thin_book_overrides():
@@ -99,3 +99,12 @@ def test_stale_or_untradable_market_is_inferred():
 def test_scale_mismatch_is_not_compared():
     e = build_envelope(base(now=ny(2026, 10, 7, 12), live_ts=ny(2026, 10, 7, 12), phase="regular", perp_now=D(220)))
     assert e.reference_agreement == "NORMALIZATION_UNVERIFIED"
+
+
+def test_calibrated_band_wraps_the_centre_only_while_frozen():
+    e = build_envelope(base(band_q05=D("-0.004"), band_q95=D("0.003"), band_source="POOLED_442_WINDOWS"))
+    assert e.lower_stress_bound == e.reality_center - D("0.004") and e.upper_stress_bound == e.reality_center + D("0.003")
+    assert "BAND_POOLED_442_WINDOWS" in e.reason_codes
+    live = build_envelope(base(now=ny(2026, 10, 7, 12), live_ts=ny(2026, 10, 7, 12), phase="regular", band_q05=D("-0.004"), band_q95=D("0.003")))
+    assert live.lower_stress_bound is None and "BAND_NOT_NEEDED_REFERENCE_LIVE" in live.reason_codes
+    assert build_envelope(base()).lower_stress_bound is None  # uncalibrated: no band is invented

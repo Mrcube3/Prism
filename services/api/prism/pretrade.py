@@ -13,6 +13,7 @@ from decimal import Decimal
 
 from .connectors.bitget import BitgetClient
 from .connectors.qwen import ProposedTrade
+from .fees import fee_rate
 from .repair import fetch_book, walk
 from .shadow import Frontier, PerpPosition, Scenario, ShadowResult, run_frontier, run_shadow
 from .workbench import Workbench, fetch_mmr_rate, fetch_price, perp_factor, with_perp_context
@@ -71,7 +72,8 @@ def apply_trade(client: BitgetClient, wb: Workbench, trade: ProposedTrade) -> tu
     direction = 1 if trade.direction == "long" else -1
 
     bids, asks, book_source = fetch_book(client, "USDT-FUTURES", trade.instrument, demo)
-    w = walk(bids, asks, "buy" if direction > 0 else "sell", size, trade.instrument, book_source)
+    fee = fee_rate(client, trade.instrument)
+    w = walk(bids, asks, "buy" if direction > 0 else "sell", size, trade.instrument, book_source, fee)
     if w.exhausted:
         raise TradeRejected("The visible order book cannot fill this size.")
 
@@ -93,10 +95,10 @@ def apply_trade(client: BitgetClient, wb: Workbench, trade: ProposedTrade) -> tu
                                       f"{mark_source}; mmr {mmr_source}"), demo))
     old_mm = sum((abs(p.size) * p.mark_price * (p.mmr_rate or 0) for p in wb.positions if same(p)), Decimal(0))
     new_mm = net_size * mark * (mmr or 0)
-    baseline = replace(wb.baseline, effective_equity=wb.baseline.effective_equity - w.slippage_cost,
+    baseline = replace(wb.baseline, effective_equity=wb.baseline.effective_equity - w.total_cost,
                        maintenance_margin=wb.baseline.maintenance_margin - old_mm + new_mm,
                        label=wb.baseline.label + " + PROPOSED TRADE (PRISM estimate)")
-    return replace(wb, baseline=baseline, positions=positions), size, mark, w.slippage_cost, mmr, mmr_source
+    return replace(wb, baseline=baseline, positions=positions), size, mark, w.total_cost, mmr, mmr_source
 
 
 def verdict(after: dict[str, ShadowResult], frontier_before: Frontier, frontier_after: Frontier, ww: list[wrong_way.WrongWayReport]) -> str:
@@ -117,7 +119,7 @@ def analyze(client: BitgetClient, wb: Workbench, trade: ProposedTrade) -> PreTra
     f_before = run_frontier(wb.baseline, wb.holdings, wb.positions)
     f_after = run_frontier(new_wb.baseline, new_wb.holdings, new_wb.positions)
     ww = [r for r in wrong_way.analyze(client, new_wb.holdings, new_wb.positions) if r.position == trade.instrument]
-    notes = ["Entry cost includes estimated slippage from the public order book; trading fees are excluded (Q-FEE).",
+    notes = ["Entry cost = public order-book slippage + taker fee from the configured Bitget account (all-fee-rate) where available.",
              "Initial margin is not checked: it depends on leverage, which was " + ("stated." if trade.leverage else "not stated.")]
     return PreTradeResult(trade, size, mark, slip, mmr, mmr_source, before, after, f_before, f_after, ww,
                           verdict(after, f_before, f_after, ww), notes)

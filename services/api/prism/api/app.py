@@ -239,11 +239,20 @@ def _pretrade(req: PreTradeRequest) -> dict[str, Any]:
         "before": {k: {"ratio": jsonable(v.shadow_core_ratio), "state": v.state.value, "equity": str(v.shadow_effective_equity)} for k, v in result.before.items()},
         "after": {k: {"ratio": jsonable(v.shadow_core_ratio), "state": v.state.value, "equity": str(v.shadow_effective_equity)} for k, v in result.after.items()},
         "blind_zone_cells": {"before": sum(c.blind_zone for c in result.frontier_before.cells), "after": sum(c.blind_zone for c in result.frontier_after.cells)},
+        # Unstressed account right after the trade (current prices, new position, entry slippage).
+        "after_trade": {"core_ratio": jsonable(after_wb.baseline.core_ratio), "effective_equity": str(after_wb.baseline.effective_equity),
+                        "maintenance_margin": str(after_wb.baseline.maintenance_margin)},
         "wrong_way": jsonable(result.wrong_way),
         "verdict": result.verdict,
         "notes": result.notes,
         "repairs": {"scenario": "severe", "target_ratio": "0.80", "candidates": jsonable(candidates), "notes": repair_notes},
     }
+    try:
+        from ..store import record_pretrade
+
+        record_pretrade(req.account, payload_hash(req.model_dump()), req.text, body)
+    except Exception:
+        pass
     body["explanation"] = None
     if req.explain:
         facts = {"verdict": result.verdict, "label": wb.baseline.label, **{f"{k}_after_state": v["state"] for k, v in body["after"].items()}}
@@ -310,6 +319,15 @@ def get_reality_series(symbol: str, minutes: int = 240) -> dict[str, Any]:
     if not RTOKEN_SYMBOL.fullmatch(symbol):
         raise HTTPException(400, "not an rToken symbol (expected e.g. RNVDAUSDT)")
     return cached(f"series:{symbol}:{minutes}", lambda: series(_client, symbol, max(30, min(minutes, 1000))))
+
+
+@app.get("/api/history/{table}")
+def get_history(table: Literal["reconciliation", "snapshots", "pretrade"], limit: int = 50) -> dict[str, Any]:
+    """Append-only history from data/prism.db (newest first)."""
+    from ..store import history
+
+    name = {"reconciliation": "reconciliation_run", "snapshots": "account_snapshot", "pretrade": "pretrade_run"}[table]
+    return {"table": table, "rows": history(name, limit)}
 
 
 @app.get("/api/market/state")

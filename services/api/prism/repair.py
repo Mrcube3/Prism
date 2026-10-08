@@ -13,10 +13,11 @@ from decimal import Decimal
 
 from .collateral import CollateralSchedule, TierMode, tiered_collateral_value
 from .connectors.bitget import BitgetClient
+from .fees import FeeRate, fee_rate
 from .shadow import Baseline, Factor, Holding, PerpPosition, Scenario, ShadowResult, run_shadow
 
 VERSION = "prism-repair-v0.1"
-FEE_NOTE = "Trading fees excluded: fee rate unavailable for this account (Q-FEE)."
+FEE_NOTE = "Execution cost = order-book slippage + taker fee (fee source shown per candidate; excluded only where unavailable)."
 
 
 @dataclass(frozen=True)
@@ -32,6 +33,12 @@ class BookWalk:
     levels_used: int
     exhausted: bool
     source: str
+    fee_cost: Decimal = Decimal(0)
+    fee_source: str = "UNAVAILABLE"
+
+    @property
+    def total_cost(self) -> Decimal:
+        return self.slippage_cost + self.fee_cost
 
 
 def fetch_book(client: BitgetClient, category: str, symbol: str, demo_env: bool = False) -> tuple[list[list[Decimal]], list[list[Decimal]], str]:
@@ -42,7 +49,8 @@ def fetch_book(client: BitgetClient, category: str, symbol: str, demo_env: bool 
     return conv(response.data.get("b") or []), conv(response.data.get("a") or []), f"bitget:{response.endpoint} ts={response.data.get('ts')}"
 
 
-def walk(bids: list[list[Decimal]], asks: list[list[Decimal]], side: str, qty: Decimal, symbol: str, source: str) -> BookWalk:
+def walk(bids: list[list[Decimal]], asks: list[list[Decimal]], side: str, qty: Decimal, symbol: str, source: str,
+         fee: "FeeRate | None" = None) -> BookWalk:
     levels = bids if side == "sell" else asks
     mid = (bids[0][0] + asks[0][0]) / 2 if bids and asks else None
     filled = notional = Decimal(0)
@@ -57,7 +65,9 @@ def walk(bids: list[list[Decimal]], asks: list[list[Decimal]], side: str, qty: D
     vwap = notional / filled if filled > 0 else None
     cost = abs(mid * filled - notional) if mid is not None and filled > 0 else Decimal(0)
     bps = (cost / (mid * filled) * 10000) if mid and filled > 0 else None
-    return BookWalk(symbol, side, qty, filled, vwap, mid, cost, bps, used, filled < qty, source)
+    fee_cost = notional * fee.taker if fee is not None and fee.known else Decimal(0)
+    return BookWalk(symbol, side, qty, filled, vwap, mid, cost, bps, used, filled < qty, source,
+                    fee_cost, fee.source if fee is not None else "UNAVAILABLE")
 
 
 @dataclass(frozen=True)
@@ -130,11 +140,12 @@ def solve(
     for i, p in enumerate(positions):
         bids, asks, source = fetch_book(client, "USDT-FUTURES", p.symbol, demo_env)
         side = "sell" if p.direction > 0 else "buy"
+        perp_fee = fee_rate(client, p.symbol)
 
-        def reduced(f: Decimal, i=i, p=p, bids=bids, asks=asks, side=side, source=source) -> ShadowResult:
-            w = walk(bids, asks, side, p.size * f, p.symbol, source)
+        def reduced(f: Decimal, i=i, p=p, bids=bids, asks=asks, side=side, source=source, perp_fee=perp_fee) -> ShadowResult:
+            w = walk(bids, asks, side, p.size * f, p.symbol, source, perp_fee)
             mm_cut = p.size * f * p.mark_price * (p.mmr_rate or Decimal(0))
-            new_base = replace(baseline, effective_equity=baseline.effective_equity - w.slippage_cost,
+            new_base = replace(baseline, effective_equity=baseline.effective_equity - w.total_cost,
                                maintenance_margin=max(baseline.maintenance_margin - mm_cut, Decimal(0)))
             new_pos = positions[:i] + [replace(p, size=p.size * (1 - f))] + positions[i + 1:]
             return run_shadow(new_base, holdings, new_pos, scenario, tier_mode)
@@ -144,21 +155,22 @@ def solve(
             candidates.append(RepairCandidate("REDUCE_PERP", f"Reduce {p.symbol}", Decimal(0), Decimal(100), None, None, None, False,
                                               "Closing the whole position does not reach the target.", "N/A"))
             continue
-        w = walk(bids, asks, side, p.size * f, p.symbol, source)
+        w = walk(bids, asks, side, p.size * f, p.symbol, source, perp_fee)
         candidates.append(RepairCandidate(
             "REDUCE_PERP", f"Reduce {p.symbol} {'long' if p.direction > 0 else 'short'} by {f:.1%} ({p.size * f:.4f})",
-            Decimal(0), f * 100, w.slippage_cost, w.slippage_bps, reduced(f), not w.exhausted,
-            "Visible book too thin for this size." if w.exhausted else f"Book walk over {w.levels_used} levels ({source}).", _liquidity(w)))
+            Decimal(0), f * 100, w.total_cost, w.slippage_bps, reduced(f), not w.exhausted,
+            "Visible book too thin for this size." if w.exhausted else f"Book walk over {w.levels_used} levels ({source}); fee {w.fee_source}.", _liquidity(w)))
 
     # 3. Sell closure-sensitive collateral (rTokens) into the public book; proceeds become USDT.
     for i, h in enumerate(holdings):
         if h.factor is not Factor.RTOKEN or not h.collateral_enabled or h.schedule is None:
             continue
         bids, asks, source = fetch_book(client, "SPOT", f"{h.coin}USDT", demo_env)
+        spot_fee = fee_rate(client, f"{h.coin}USDT", "SPOT")
 
-        def sold(f: Decimal, i=i, h=h, bids=bids, asks=asks, source=source) -> ShadowResult:
-            w = walk(bids, asks, "sell", h.quantity * f, h.coin, source)
-            proceeds = (w.vwap or Decimal(0)) * w.filled
+        def sold(f: Decimal, i=i, h=h, bids=bids, asks=asks, source=source, spot_fee=spot_fee) -> ShadowResult:
+            w = walk(bids, asks, "sell", h.quantity * f, h.coin, source, spot_fee)
+            proceeds = (w.vwap or Decimal(0)) * w.filled - w.fee_cost
             keep = h.quantity - w.filled
             eq_change = (tiered_collateral_value(keep * h.price, h.schedule, tier_mode)
                          - tiered_collateral_value(h.quantity * h.price, h.schedule, tier_mode) + proceeds * stable_rate)
@@ -171,9 +183,9 @@ def solve(
             candidates.append(RepairCandidate("SELL_RTOKEN", f"Sell {h.coin}", Decimal(0), Decimal(0), None, None, None, False,
                                               "Selling the entire holding does not reach the target.", "N/A"))
             continue
-        w = walk(bids, asks, "sell", h.quantity * f, h.coin, source)
+        w = walk(bids, asks, "sell", h.quantity * f, h.coin, source, spot_fee)
         candidates.append(RepairCandidate(
-            "SELL_RTOKEN", f"Sell {f:.1%} of {h.coin} ({h.quantity * f:.4f})", Decimal(0), Decimal(0), w.slippage_cost, w.slippage_bps,
+            "SELL_RTOKEN", f"Sell {f:.1%} of {h.coin} ({h.quantity * f:.4f})", Decimal(0), Decimal(0), w.total_cost, w.slippage_bps,
             sold(f), not w.exhausted,
             "Visible public book too thin for this size." if w.exhausted else f"Public rToken book walk over {w.levels_used} levels; weekend orders may be cancelled at reopen (§40).",
             _liquidity(w)))
@@ -184,16 +196,16 @@ def solve(
         p = positions[0]
         half = reduce.exposure_change_pct / 200
         bids, asks, source = fetch_book(client, "USDT-FUTURES", p.symbol, demo_env)
-        w = walk(bids, asks, "sell" if p.direction > 0 else "buy", p.size * half, p.symbol, source)
+        w = walk(bids, asks, "sell" if p.direction > 0 else "buy", p.size * half, p.symbol, source, fee_rate(client, p.symbol))
         mm_cut = p.size * half * p.mark_price * (p.mmr_rate or Decimal(0))
-        base2 = replace(baseline, effective_equity=baseline.effective_equity - w.slippage_cost,
+        base2 = replace(baseline, effective_equity=baseline.effective_equity - w.total_cost,
                         maintenance_margin=max(baseline.maintenance_margin - mm_cut, Decimal(0)))
         pos2 = [replace(p, size=p.size * (1 - half))] + positions[1:]
         mid = run_shadow(base2, holdings, pos2, scenario, tier_mode)
         x2 = with_stable(base2, mid)
         final = run_shadow(replace(base2, effective_equity=base2.effective_equity + x2 * stable_rate), holdings, pos2, scenario, tier_mode)
         candidates.append(RepairCandidate("MIXED", f"Reduce {p.symbol} by {half:.1%} and deposit {x2:,.2f} USDT", x2, half * 100,
-                                          w.slippage_cost, w.slippage_bps, final, not w.exhausted, f"Book walk ({source}).", _liquidity(w)))
+                                          w.total_cost, w.slippage_bps, final, not w.exhausted, f"Book walk ({source}).", _liquidity(w)))
     return before, candidates, notes
 
 

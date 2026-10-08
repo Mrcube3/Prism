@@ -106,3 +106,10 @@ Signed-request environment: **DEMO_PAPTRADING**.
 
 Machine-readable report: [`data/research/bitget_capabilities.json`](../data/research/bitget_capabilities.json).
 <!-- AUTO:verify_bitget END -->
+
+## Verified after the M1 run (2026-10-08)
+
+| Capability | Status | Endpoint | Evidence |
+| --- | --- | --- | --- |
+| `all_fee_rate` (futures) | **VERIFIED** | `GET /api/v3/account/all-fee-rate?category=USDT-FUTURES` (signed, demo key) | Returns per-symbol taker/maker; BTCUSDT taker 0.0006, maker 0.0002. Used by `prism/fees.py`; supersedes the 404 `account/fee-rate` row above. |
+| `all_fee_rate` (rToken spot) | **UNVERIFIED** | same endpoint, `category=SPOT` | No rate returned for RNVDAUSDT in demo; rToken repair costs say `fee UNAVAILABLE` instead of assuming one. |

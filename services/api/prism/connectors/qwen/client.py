@@ -90,6 +90,23 @@ leverage (only if the user stated it, else null), timing (short string or null),
 missing_fields (list of keys you could not fill from the sentence).
 Never invent a number the user did not say. Never compute anything."""
 
+CLASSIFY_PROMPT_VERSION = "prism-event-classifier-v1"
+CLASSIFY_INSTRUCTIONS = """You classify news headlines about one U.S. stock for a read-only risk tool. Output ONLY a JSON object
+{"items": [...]} with one entry per headline id you were given, each with keys: id, relevant (true only if the headline is
+mainly about this company), event_type ("company_specific", "sector", "macro" or "other"), direction ("positive", "negative",
+"neutral" or "unclear" for the stock), materiality ("high", "medium" or "low"), summary (at most 20 words, no numbers that
+are not in the headline). Never predict a price, a percentage move or a probability."""
+
+
+class EventClass(BaseModel):
+    id: str
+    relevant: bool
+    event_type: Literal["company_specific", "sector", "macro", "other"]
+    direction: Literal["positive", "negative", "neutral", "unclear"]
+    materiality: Literal["high", "medium", "low"]
+    summary: str = Field(max_length=240)
+
+
 EXPLAIN_INSTRUCTIONS = """You explain results from PRISM, a read-only risk tool, to a trader.
 Use ONLY numbers that appear verbatim in TOOL_OUTPUT. Do not compute, round differently, or add any new number, percentage or price.
 If something the trader asks is not in TOOL_OUTPUT, say it is not available. Keep it under 120 words. PRISM never places trades."""
@@ -131,6 +148,31 @@ class QwenClient:
             _check_parsed_numbers(trade, text)
             return trade, call
         raise QwenInvalidOutput(f"Qwen did not return a valid trade after a retry: {last_error}")
+
+    def classify_headlines(self, ticker: str, items: list) -> dict[str, dict]:
+        """§27 classification of headlines; ids must match, summaries may not introduce numbers."""
+        listing = "\n".join(f"{h.id}: {h.title} ({h.publisher})" for h in items)
+        source_text = " ".join(h.title for h in items)
+        last_error = ""
+        for attempt in range(2):
+            prompt = f"STOCK: {ticker}\nHEADLINES:\n{listing}" + (f"\n\nPrevious output invalid ({last_error}). Return only the JSON." if attempt else "")
+            call = self._respond(CLASSIFY_INSTRUCTIONS, prompt, CLASSIFY_PROMPT_VERSION)
+            try:
+                raw = _extract_json(call.raw_text).get("items", [])
+                parsed = [EventClass.model_validate(x) for x in raw]
+            except (ValueError, ValidationError) as exc:
+                last_error = str(exc)[:200]
+                continue
+            known = {h.id for h in items}
+            out = {}
+            for e in parsed:
+                if e.id not in known:
+                    continue
+                if unsupported_numbers(e.summary, source_text):
+                    e = e.model_copy(update={"summary": "(summary withheld: contained a number not in the headline)"})
+                out[e.id] = e.model_dump() | {"model": call.model, "prompt_version": call.prompt_version, "input_hash": call.input_hash}
+            return out
+        raise QwenInvalidOutput(f"Qwen did not return valid classifications: {last_error}")
 
     def explain(self, question: str, tool_output: dict[str, Any]) -> tuple[str, QwenCall]:
         payload = json.dumps(tool_output, ensure_ascii=False, default=str)

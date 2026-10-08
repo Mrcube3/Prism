@@ -177,13 +177,17 @@ class RealityInputs:
     spread_history: list[Decimal]
     depth_history: list[Decimal]
     closure_windows_captured: int
-    event_status: str                        # PRIMARY_EVENT / NO_FILING / NOT_APPLICABLE / UNAVAILABLE: ...
+    event_status: str                        # PRIMARY_EVENT / NEWS_EVENT / NO_FILING / NOT_APPLICABLE / UNAVAILABLE: ...
     sources: dict[str, str] = field(default_factory=dict)
     reference_source: str = "rToken close at boundary"
     underlying_last: Decimal | None = None   # underlying's latest trade incl. pre/post market
     underlying_last_ts: datetime | None = None
     events: tuple[str, ...] = ()             # human-readable primary-source events in the window
     # Agreement thresholds: hand-set defaults until calibration.py learns them from captured history.
+    # Empirical residual band (realized − centre) from backfill.py; None until calibrated.
+    band_q05: Decimal | None = None
+    band_q95: Decimal | None = None
+    band_source: str = "UNCALIBRATED"
     agree_bps: Decimal = AGREE_BPS
     conflict_bps: Decimal = CONFLICT_BPS
     threshold_source: str = "DEFAULT"
@@ -300,9 +304,10 @@ def build_envelope(i: RealityInputs) -> RealityEnvelope:
     elif abs(move) < MIN_MOVE_FOR_STATE:
         state = MarketState.DRIFT
         reasons.append("MOVE_BELOW_0.5PCT")
-    elif perp_move is None and i.event_status == "PRIMARY_EVENT" and quality is not Quality.UNAVAILABLE:
+    elif perp_move is None and i.event_status in ("PRIMARY_EVENT", "NEWS_EVENT") and quality is not Quality.UNAVAILABLE:
         state = MarketState.DISCOVERY
         reasons.append("EVENT_SUPPORTED")
+        reasons.append("EVENT_SOURCE_PRIMARY" if i.event_status == "PRIMARY_EVENT" else "EVENT_SOURCE_SECONDARY_NEWS")
     elif perp_move is None or quality is Quality.UNAVAILABLE:
         state = MarketState.DRIFT
         reasons.append("MOVE_UNCORROBORATED")
@@ -318,7 +323,12 @@ def build_envelope(i: RealityInputs) -> RealityEnvelope:
     center = _median([m for m in (move, perp_move) if m is not None])
     windows = i.closure_windows_captured
     support = "LOW" if windows < 3 else "MODERATE" if windows < BAND_MIN_WINDOWS else "HIGH"
-    reasons.append(f"BAND_UNAVAILABLE_{windows}_OF_{BAND_MIN_WINDOWS}_CLOSURE_WINDOWS")
+    lower = upper = None
+    if regime is Regime.FROZEN_REFERENCE and center is not None and i.band_q05 is not None and i.band_q95 is not None:
+        lower, upper = center + i.band_q05, center + i.band_q95
+        reasons.append(f"BAND_{i.band_source}")
+    else:
+        reasons.append(f"BAND_UNAVAILABLE_{i.band_source}" if regime is Regime.FROZEN_REFERENCE else "BAND_NOT_NEEDED_REFERENCE_LIVE")
 
     return RealityEnvelope(
         symbol=i.symbol, underlying=i.underlying, regime=regime, weekend_tradable=i.weekend_tradable,
@@ -328,8 +338,8 @@ def build_envelope(i: RealityInputs) -> RealityEnvelope:
         reference_gap_bps=gap_bps, reference_agreement=agreement, agreement_reference=agreement_ref,
         market_quality=quality, liquidity=i.book,
         evidence_mode=mode, market_state=state, reality_center=center if regime is Regime.FROZEN_REFERENCE else None,
-        lower_stress_bound=None, upper_stress_bound=None,
-        data_support=f"closure windows {windows} ({support}); liquidity history {q_support}",
+        lower_stress_bound=lower, upper_stress_bound=upper,
+        data_support=f"band {i.band_source.lower().replace('_', ' ')}; forward closures {windows} ({support}); liquidity history {q_support}",
         event_support=i.event_status, events=i.events, reference_source=i.reference_source,
         underlying_last=i.underlying_last, threshold_source=i.threshold_source,
         reason_codes=tuple(reasons + [f"EVENT_{i.event_status.split(':')[0]}"]), assumptions=ASSUMPTIONS, sources=i.sources,

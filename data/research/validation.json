@@ -1,0 +1,139 @@
+{
+  "generated_at": "2026-10-08T11:10:11.708673+00:00",
+  "proxy_check": [],
+  "autopsy": [],
+  "summary": {
+    "A": {
+      "n": 0,
+      "mae_pp": null,
+      "median_ae_pp": null,
+      "directional_accuracy": null
+    },
+    "B": {
+      "n": 0,
+      "mae_pp": null,
+      "median_ae_pp": null,
+      "directional_accuracy": null
+    },
+    "P": {
+      "n": 0,
+      "mae_pp": null,
+      "median_ae_pp": null,
+      "directional_accuracy": null
+    }
+  },
+  "backfill": {
+    "generated_at": "2026-10-08T11:09:00.712950+00:00",
+    "version": "prism-backfill-v0.1",
+    "windows": 442,
+    "by_kind": {
+      "OVERNIGHT": 350,
+      "WEEKEND": 78,
+      "HOLIDAY": 14
+    },
+    "per_asset": {
+      "RAAPLUSDT": {
+        "n": 32,
+        "q05": -0.002161645963445169,
+        "q95": 0.0020059103008725513
+      },
+      "RAMDUSDT": {
+        "n": 32,
+        "q05": -0.004541883446645462,
+        "q95": 0.003648317404768935
+      },
+      "RAMZNUSDT": {
+        "n": 34,
+        "q05": -0.0025510779466643707,
+        "q95": 0.002832825402982649
+      },
+      "RCOINUSDT": {
+        "n": 31,
+        "q05": -0.004793568045685481,
+        "q95": 0.0051299913381889495
+      },
+      "RGOOGLUSDT": {
+        "n": 30,
+        "q05": -0.0016311883507124092,
+        "q95": 0.0014079018989231811
+      },
+      "RHOODUSDT": {
+        "n": 32,
+        "q05": -0.021232632386261545,
+        "q95": 0.005930589067301016
+      },
+      "RMETAUSDT": {
+        "n": 32,
+        "q05": -0.0033013724467618076,
+        "q95": 0.0034103818566104446
+      },
+      "RMSFTUSDT": {
+        "n": 33,
+        "q05": -0.00186872502697093,
+        "q95": 0.0010120211602076877
+      },
+      "RMSTRUSDT": {
+        "n": 28,
+        "q05": -0.0127716127058867,
+        "q95": 0.011107833089539937
+      },
+      "RNVDAUSDT": {
+        "n": 28,
+        "q05": -0.002760293913772954,
+        "q95": 0.0013433931385242151
+      },
+      "RPLTRUSDT": {
+        "n": 36,
+        "q05": -0.0035724265735467275,
+        "q95": 0.0031601405745003003
+      },
+      "RQQQUSDT": {
+        "n": 28,
+        "q05": -0.0016754062443136595,
+        "q95": 0.00011740118850266375
+      },
+      "RSPYUSDT": {
+        "n": 36,
+        "q05": -0.0009528706561595379,
+        "q95": 0.0014202350844305933
+      },
+      "RTSLAUSDT": {
+        "n": 30,
+        "q05": -0.0037683384126275363,
+        "q95": 0.001394608425585539
+      }
+    },
+    "pooled": {
+      "n": 442,
+      "q05": -0.004458659942259455,
+      "q95": 0.0034052149412385846
+    },
+    "walk_forward": {
+      "scored": 404,
+      "coverage": 0.869,
+      "target_coverage": 0.9,
+      "mean_width_pp": 0.809
+    },
+    "methods": {
+      "A_frozen_reference": {
+        "n": 442,
+        "mae_pp": 0.561,
+        "median_ae_pp": 0.297,
+        "directional_accuracy": null
+      },
+      "B_live_rtoken": {
+        "n": 442,
+        "mae_pp": 0.194,
+        "median_ae_pp": 0.1,
+        "directional_accuracy": 0.913
+      },
+      "P_prism_centre": {
+        "n": 442,
+        "mae_pp": 0.192,
+        "median_ae_pp": 0.094,
+        "directional_accuracy": 0.918
+      }
+    },
+    "assumption": "Bitget's collateral index resumes with pre-market data at 04:00 New York (to be confirmed by the thaw experiment)."
+  }
+}

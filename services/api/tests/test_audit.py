@@ -82,7 +82,30 @@ def test_long_does_not_net_against_short_in_hedge_mode(monkeypatch, mode, expect
     monkeypatch.setattr(pretrade, "fetch_mmr_rate", lambda *a, **k: (D("0.01"), "t"))
     monkeypatch.setattr(pretrade, "perp_factor", lambda *a, **k: Factor.CRYPTO)
     monkeypatch.setattr(pretrade, "with_perp_context", lambda client, p, demo=False: p)
+    monkeypatch.setattr(pretrade, "fee_rate", lambda *a, **k: None)
     trade = ProposedTrade(instrument="BTCUSDT", category="USDT-FUTURES", direction="long", notional_usd=200, quantity=None,
                           leverage=None, timing=None, confidence="high", missing_fields=[])
     wb, *_ = pretrade.apply_trade(None, _wb(mode), trade)
     assert {(p.direction, p.size) for p in wb.positions} == expected
+
+
+
+def test_book_walk_adds_the_taker_fee_to_execution_cost():
+    from prism.fees import FeeRate
+    from prism.repair import walk
+    w = walk([[D(100), D(5)]], [[D(101), D(5)]], "sell", D(2), "X", "t", FeeRate("X", D("0.0006"), None, "ACCOUNT"))
+    assert w.slippage_cost == D(1) and w.fee_cost == D(200) * D("0.0006") and w.total_cost == D(1) + D("0.12")
+    no_fee = walk([[D(100), D(5)]], [[D(101), D(5)]], "sell", D(2), "X", "t")
+    assert no_fee.total_cost == no_fee.slippage_cost and no_fee.fee_source == "UNAVAILABLE"
+
+
+def test_history_store_appends_and_reads_back(tmp_path):
+    from prism import store
+    db = tmp_path / "h.db"
+    body = {"parsed_trade": {"instrument": "BTCUSDT"}, "verdict": "ok", "after": {"x": D("1.5")}}
+    store.record_pretrade("judge", "sha256:x", "Can I add?", body, db)
+    store.record_pretrade("judge", "sha256:y", "Again?", body, db)
+    rows = store.history("pretrade_run", 10, db)
+    assert [r["question"] for r in rows] == ["Again?", "Can I add?"] and rows[0]["result"]["after"]["x"] == "1.5"
+    with pytest.raises(ValueError):
+        store.history("sqlite_master", 1, db)

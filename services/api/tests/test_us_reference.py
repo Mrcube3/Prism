@@ -50,3 +50,26 @@ def test_primary_event_corroborates_an_unreferenced_move():
     e = build_envelope(base(perp_now=None, perp_at_reference=None, perp_symbol=None, event_status="PRIMARY_EVENT"))
     assert e.market_state is MarketState.DISCOVERY and "EVENT_SUPPORTED" in e.reason_codes
     assert build_envelope(base(perp_now=None, perp_at_reference=None, perp_symbol=None)).market_state is MarketState.DRIFT
+
+
+def test_news_event_is_secondary_support():
+    e = build_envelope(base(perp_now=None, perp_at_reference=None, perp_symbol=None, event_status="NEWS_EVENT"))
+    assert e.market_state is MarketState.DISCOVERY and "EVENT_SOURCE_SECONDARY_NEWS" in e.reason_codes
+
+
+def test_headline_relevance_filter():
+    from prism.connectors.us_reference.news import _relevant
+    assert _relevant("Strategy (MSTR) Stock Trades Down", "MSTR", "Strategy Inc")
+    assert _relevant("Nvidia-powered laptop debuts", "NVDA", "NVIDIA Corporation")
+    assert not _relevant("Amazon has fallen 10% from its high", "NVDA", "NVIDIA Corporation")
+
+
+def test_web_requests_never_call_qwen_for_news(tmp_path, monkeypatch):
+    from prism.connectors.us_reference import news
+    monkeypatch.setattr(news, "CACHE_FILE", tmp_path / "c.json")
+    h = news.Headline("a1", "NVDA beats", "X", datetime(2026, 10, 8, tzinfo=timezone.utc), "")
+    assert news.classified("NVDA", [h], None) == ({}, "PENDING_CLASSIFICATION")
+    calls = []
+    out, status = news.classified("NVDA", [h], lambda t, items: calls.append(1) or {"a1": {"relevant": True}})
+    assert status == "CLASSIFIED" and calls == [1]
+    assert news.classified("NVDA", [h], None) == ({"a1": {"relevant": True}}, "CLASSIFIED")  # served from disk cache

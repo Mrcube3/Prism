@@ -1,0 +1,11 @@
+[Unit]
+Description=PRISM thaw experiment around New York session boundaries
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 19:45:00 America/New_York
+OnCalendar=Mon..Fri *-*-* 03:45:00 America/New_York
+OnCalendar=Mon..Fri *-*-* 09:15:00 America/New_York
+Persistent=false
+
+[Install]
+WantedBy=timers.target

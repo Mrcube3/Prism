@@ -58,5 +58,8 @@ The update excludes `.env.local`, so the server's secrets and password are kept.
 
 - Judge Mode uses each rToken's last traded price as a stand-in for Bitget's recognized collateral price (Q-RECOGNIZED-PRICE).
 - Stress scenarios are fixed, user-adjustable shocks, not Reality-Engine outputs (M3 not built).
-- Trading fees are excluded from repair costs (Q-FEE). Initial margin is not checked.
+- Repair costs include the taker fee where Bitget returns it (`account/all-fee-rate`); rToken spot fees are unavailable in demo and shown as such. Initial margin is not checked.
+- History: `GET /api/history/{reconciliation|snapshots|pretrade}` reads the append-only SQLite store `data/prism.db`.
+- Thaw experiment: `deploy/prism-thaw.timer` runs `scripts/capture_thaw.py` around 20:00, 04:00 and 09:30 New York; results in `docs/THAW_EXPERIMENT.md`.
+- Stress band: `scripts/backfill_closures.py` (also refreshed daily by `prism-validate`).
 - With Bitget's real BTC MMR, the shadow core ratio stays low until equity is nearly gone (Q-MMR-SCALE), so breaches appear abruptly on the frontier.

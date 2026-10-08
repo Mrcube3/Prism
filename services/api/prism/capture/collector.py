@@ -47,6 +47,7 @@ class Cadence:
     account: int = 300
     collateral_tiers: int = 86_400
     reality: int = 300
+    reconcile: int = 900
 
 
 @dataclass
@@ -188,10 +189,18 @@ class Collector:
 
         for symbol in self.rtokens:
             try:
-                env = dataclasses.asdict(envelope(self.client, symbol, self.capture_root))
+                env = dataclasses.asdict(envelope(self.client, symbol, self.capture_root, allow_qwen=True))  # background: may run Qwen
                 self._append("reality", {"at": utc_now().isoformat(), "symbol": symbol, "envelope": env})
             except Exception as exc:  # recorded as a failure, never filled in
                 self._append("reality", {"at": utc_now().isoformat(), "symbol": symbol, "error": f"{type(exc).__name__}: {exc}"[:200]})
+
+    def poll_reconcile(self) -> None:
+        """Reconcile the configured Bitget account every 15 min; each run is stored in data/prism.db."""
+        if not self.settings.has_bitget_credentials:
+            return
+        from ..workbench import bitget_workbench
+
+        bitget_workbench(self.client)
 
     def poll_collateral_tiers(self) -> None:
         response = self.client.get("/api/v3/market/discount-rate")
@@ -209,6 +218,7 @@ class Collector:
             ("account", self.cadence.account, self.poll_account),
             ("collateral_tiers", self.cadence.collateral_tiers, self.poll_collateral_tiers),
             ("reality", self.cadence.reality, self.poll_reality),
+            ("reconcile", self.cadence.reconcile, self.poll_reconcile),
         )
         for name, every, job in jobs:
             if self._due(name, every, now):

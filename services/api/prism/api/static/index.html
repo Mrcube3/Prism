@@ -103,12 +103,12 @@ dialog{color:var(--ink);background:var(--panel);border:1px solid var(--line);bor
  <section class="panel repairs">
   <div class="ph"><h2><span class="step">04</span>REPAIR SOLVER</h2><span class="tiny" id="repair-context">Severe scenario · target &lt;80% core ratio · advisory</span></div>
   <div class="repair-grid" id="repairs"></div>
-  <div class="repair-foot" id="repair-note">Comparing feasible alternatives. Trading fees are excluded; estimated execution cost is not an all-in cost.</div>
+  <div class="repair-foot" id="repair-note">Comparing feasible alternatives. Execution cost = order-book slippage + taker fee where the fee rate is known.</div>
  </section>
  <div class="terminal-foot"><span>Observed inputs ≠ counterfactual results. Missing evidence remains unavailable.</span><button id="details-btn">Source provenance &amp; model limitations ↗</button></div>
 </main>
 <footer class="command"><form id="ask"><label for="question">◇ Ask PRISM</label><input id="question" autocomplete="off" aria-label="Ask PRISM" value="Can I add another $10,000 BTC long tonight using my current rToken collateral?"><button id="ask-btn" type="submit">Analyse →</button></form><div class="command-note">Controls this workspace. Qwen parses and explains; deterministic engines calculate. Nothing is traded.</div></footer>
-<dialog id="evidence-drawer" class="drawer"><div class="ph"><h2>Evidence Lock</h2><button class="ghost" id="close-drawer" aria-label="Close evidence drawer">Close ×</button></div><p>Inspect the sources and limitations behind the visible terminal. No evidence is manufactured.</p><h3>Market evidence</h3><p>Live Bitget 1m candles for the selected rToken and its stock perp, plus the Reality Engine envelope (prism-reality-v0.1). The frozen reference is a proxy: the underlying stock's last extended-hours trade at or before 20:00 New York (Yahoo Finance, unofficial), falling back to the rToken close there, because Bitget's collateral index is not exposed. The stress band stays uncalibrated until enough closure windows with reopen are captured. Event evidence comes from SEC EDGAR 8-K filings (official, primary source); Bitget's US-stock data service is used again when it recovers.</p><pre id="chart-provenance"></pre><h3>Account &amp; calculation evidence</h3><ul id="notes"></ul><h3>Latest proposed trade</h3><div id="trade-evidence" class="dim">No trade analysis requested.</div><h3>Repair evidence</h3><ul id="repair-evidence"></ul></dialog>
+<dialog id="evidence-drawer" class="drawer"><div class="ph"><h2>Evidence Lock</h2><button class="ghost" id="close-drawer" aria-label="Close evidence drawer">Close ×</button></div><p>Inspect the sources and limitations behind the visible terminal. No evidence is manufactured.</p><h3>Market evidence</h3><p>Live Bitget 1m candles for the selected rToken and its stock perp, plus the Reality Engine envelope (prism-reality-v0.1). The frozen reference is a proxy: the underlying stock's last extended-hours trade at or before 20:00 New York (Yahoo Finance, unofficial), falling back to the rToken close there, because Bitget's collateral index is not exposed. The stress band is the 5th–95th percentile of past closure errors (realized reopen move minus PRISM centre), rebuilt daily from real Bitget and Yahoo hourly data with walk-forward checks; see docs/VALIDATION.md. Event evidence: SEC EDGAR 8-K filings (official, primary source) and recent headlines (Yahoo Finance search) classified by Qwen as secondary evidence. Qwen labels events; it never moves a price.</p><pre id="chart-provenance"></pre><h3>Event evidence</h3><ul id="event-list"><li class="quiet">Loading…</li></ul><h3>Account &amp; calculation evidence</h3><ul id="notes"></ul><h3>Latest proposed trade</h3><div id="trade-evidence" class="dim">No trade analysis requested.</div><h3>Repair evidence</h3><ul id="repair-evidence"></ul><h3>Reconciliation history</h3><p class="dim">Every reconciliation of the connected Bitget account, stored append-only (data/prism.db). Newest first.</p><ul id="recon-history"><li class="quiet">Open to load.</li></ul></dialog>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -177,14 +177,16 @@ function renderMarket(){
  $("price-facts").innerHTML=facts.map(([k,v])=>'<div><small>'+k+'</small><b>'+v+'</b></div>').join("");
  const liq=e?.liquidity||{},quality=e?.market_quality,q=quality==="UNAVAILABLE"&&liq.spread_bps!=null?"Spread "+num(liq.spread_bps).toFixed(1)+" bp":label(quality);
  const agree=e?.reference_agreement,gap=e?.reference_gap_bps!=null?" · "+(num(e.reference_gap_bps)>0?"+":"")+num(e.reference_gap_bps).toFixed(0)+" bp":"";
- const evs=e?.event_support||"",evText=evs==="PRIMARY_EVENT"?(e.events||[]).length+" SEC 8-K filing"+((e.events||[]).length>1?"s":""):evs==="NO_FILING"?"No 8-K since 16:00 NY":evs==="NOT_APPLICABLE"?"Not a filer (ETF)":evs.startsWith("UNAVAILABLE")?"UNAVAILABLE":label(evs);
+ const evl=e?.events||[],n8k=evl.filter(x=>x.startsWith("SEC ")).length,nnews=evl.filter(x=>x.startsWith("NEWS ")).length;
+ const evs=e?.event_support||"",evText=evs==="PRIMARY_EVENT"?n8k+" SEC 8-K filing"+(n8k>1?"s":""):evs==="NEWS_EVENT"?"Material headline (secondary)":evs==="NO_FILING"?"No 8-K"+(nnews?" · "+nnews+" headline"+(nnews>1?"s":""):" since 16:00 NY"):evs==="NOT_APPLICABLE"?"Not a filer (ETF)":evs.startsWith("UNAVAILABLE")?"UNAVAILABLE":label(evs);
  const ev=[["REALITY STATE",e?.market_state==="NOT_APPLICABLE"?"REFERENCE LIVE":label(e?.market_state),"Discovery / drift / overshoot / thin / conflict: deterministic rules in prism/reality/engine.py"],
   ["EVIDENCE MODE",label(e?.evidence_mode),"OBSERVED / HYBRID / INFERRED (§23)"],
   ["LIQUIDITY QUALITY",q,quality==="UNAVAILABLE"?"Graded only against this rToken's own captured history; not enough history yet":"Ranked against this rToken's captured spread and depth"],
   ["REFERENCE AGREEMENT",label(agree)+gap,"rToken vs "+(e?.agreement_reference||"an independent reference")],
   ["EVENT SUPPORT",evText,(e?.events||[]).join("\n")||e?.sources?.events||evs]];
  $("evidence-row").innerHTML=ev.map(([k,v,t])=>'<div title="'+esc(t)+'"><small>'+k+'</small><b>'+esc(v)+'</b></div>').join("");
- $("shadow-band").innerHTML='<span>PRISM shadow stress band</span><span class="quiet" title="'+esc((e?.reason_codes||[]).join(" · "))+'">'+(e&&!e.error?(e.reality_center!=null?"Centre "+spct(e.reality_center)+" (uncalibrated) · ":"")+"Band not calibrated · "+esc(e.data_support):"Unavailable")+'</span>';
+ $("shadow-band").innerHTML='<span>PRISM shadow stress band</span><span class="quiet" title="'+esc((e?.reason_codes||[]).join(" · "))+'">'+(e&&!e.error?(e.lower_stress_bound!=null?"Centre "+spct(e.reality_center)+" · band "+spct(e.lower_stress_bound)+" → "+spct(e.upper_stress_bound)+" (5–95% of past closure errors) · ":e.reality_center!=null?"Centre "+spct(e.reality_center)+" · ":"")+(e.lower_stress_bound==null&&frozen?"Band not calibrated · ":"")+esc(e.data_support):"Unavailable")+'</span>';
+ $("event-list").innerHTML=evl.length?evl.map(x=>'<li>'+esc(x)+'</li>').join(""):'<li class="quiet">No filings or headlines in the window'+(e?.sources?.events?" ("+esc(e.sources.events)+")":"")+'.</li>';
  $("why").innerHTML='<b>Why a shadow account?</b> '+(frozen?"Bitget's collateral reference for "+esc(SELECTED)+" is frozen at the last 20:00 New York close while the rToken keeps trading. PRISM stress-tests that gap.":"U.S. markets are in session, so Bitget's collateral reference tracks the stock. The frozen-versus-live gap opens overnight and at weekends; the capture records it.");
  if(SERIES[SELECTED])drawChart();else{$("chart").innerHTML=loading("Loading Bitget candles…");loadSeries(SELECTED);}
  $("watchlist").innerHTML=(WB?.holdings.filter(h=>h.factor==="rtoken")||[]).map(h=>{
@@ -247,7 +249,7 @@ function renderRepairs(candidates,notes,context){
  return '<div class="repair '+(best?"best":"")+'" title="'+esc(c.detail+(c.reason?" · "+c.reason:""))+'"><div class="repair-head"><span>'+label+'</span><span class="repair-tag">'+(best?"LOWEST OUTLAY":c.feasible?"FEASIBLE":"BLOCKED")+'</span></div><div class="repair-values"><span>'+ (c.shadow_after?pct(c.shadow_after.shadow_core_ratio):"—")+'</span><span>'+usd(c.cash_required)+'</span></div><small>Shadow core ratio / cash required</small><div class="repair-desc">'+esc(c.detail)+'</div><small>Exec. estimate '+usd(c.execution_cost,2)+' · exposure Δ '+num(c.exposure_change_pct).toFixed(1)+'%</small></div>';
  }).join("");
  $("repair-context").textContent=context||"Severe scenario · target <80% core ratio · advisory";
- $("repair-note").textContent="Lowest outlay = cash + known execution estimate. Fees excluded; unknown costs cannot win. Compare exposure changes too.";
+ $("repair-note").textContent="Lowest outlay = cash + execution estimate (slippage + taker fee). Unknown costs cannot win. Compare exposure changes too.";
  $("repair-evidence").innerHTML=(notes||[]).map(n=>'<li>'+esc(n)+'</li>').join("");
 }
 async function load(){
@@ -280,7 +282,7 @@ async function analyse(ev){
   TRADE=r;
   $("proposal").textContent=(r.parsed_trade.direction||"").toUpperCase()+" "+r.parsed_trade.instrument+" · "+usd(r.parsed_trade.notional_usd)+" proposed";
   $("pretrade").innerHTML='<div class="trade-flow">'+tradeStage("CURRENT",pct(WB.baseline.core_ratio),"Baseline core ratio")+
-    tradeStage("AFTER TRADE","—","Not returned by API")+
+    tradeStage("AFTER TRADE",pct(r.after_trade?.core_ratio),"Current prices, new position")+
     tradeStage("PRISM CENTRAL",pct(r.after.central.ratio),r.after.central.state,r.after.central.state)+
     tradeStage("SEVERE",pct(r.after.severe.ratio),r.after.severe.state,r.after.severe.state)+'</div><div class="pretrade-note"><b>Blind-Zone cells '+r.blind_zone_cells.before+' → '+r.blind_zone_cells.after+'</b> · '+num(r.trade.added_size).toFixed(4)+' units at '+usd(r.trade.entry_price,2)+'<br>Deterministic verdict and supporting evidence are available in Evidence Lock.</div><div class="pretrade-warnings">'+((r.wrong_way||[]).filter(x=>x.wrong_way_assets?.length).map(x=>'Wrong-way: '+esc(x.position)+' ↔ '+esc(x.wrong_way_assets.join(" / "))).join(" · "))+'</div>';
   $("trade-status").textContent="Calculated · no order placed";
@@ -298,7 +300,8 @@ $("watchlist").onclick=e=>{const b=e.target.closest("[data-symbol]");if(b){SELEC
 setInterval(()=>{if(WB){SERIES={};loadReality(generation);}},60000);
 document.querySelectorAll("[data-acct]").forEach(b=>b.onclick=()=>{if(ACCOUNT!==b.dataset.acct){ACCOUNT=b.dataset.acct;load();}});
 $("ask").onsubmit=analyse;$("analyze").onclick=()=>analyse();
-$("evidence-btn").onclick=$("details-btn").onclick=()=>{$("evidence-drawer").showModal();};
+$("evidence-btn").onclick=$("details-btn").onclick=()=>{$("evidence-drawer").showModal();loadReconHistory();};
+function loadReconHistory(){api("/api/history/reconciliation?limit=12").then(d=>{$("recon-history").innerHTML=(d.rows||[]).map(r=>'<li>'+esc(r.at.slice(0,16).replace("T"," "))+' UTC · '+esc(r.environment)+' · <b>'+esc(r.mode)+'</b> · equity error '+(r.equity_error!=null?usd(r.equity_error,2):"—")+(r.best_hypothesis?' ('+esc(r.best_hypothesis)+')':'')+'</li>').join("")||'<li class="quiet">No reconciliations recorded yet.</li>';}).catch(e=>{$("recon-history").innerHTML='<li class="quiet">Unavailable: '+esc(e.message)+'</li>';});}
 $("close-drawer").onclick=()=>$("evidence-drawer").close();
 $("chart-provenance").textContent=JSON.stringify({source:RECORDED.source,file:RECORDED.file,retrieved_at:RECORDED.retrieved_at,raw_payload_hashes:RECORDED.hashes,data_mode:"RECORDED",is_live:false,is_hypothetical:false,is_replay:false},null,2);
 window.addEventListener("resize",drawChart);

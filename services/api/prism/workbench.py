@@ -205,6 +205,12 @@ def bitget_workbench(client: BitgetClient) -> Workbench:
                                     collateral.data if collateral.ok else None, open_orders=order_rows)
     schedules = fetch_schedules(client, demo_env=demo)
     result = reconcile(snapshot, schedules)
+    try:  # history is best-effort: a storage error must never block the analysis
+        from .store import record_reconciliation
+
+        record_reconciliation(snapshot, result, source="workbench")
+    except Exception:
+        pass
 
     holdings = []
     for a in snapshot.assets:

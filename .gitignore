@@ -8,3 +8,5 @@ __pycache__/
 # raw provider payloads and captured market data can contain private account data
 /data/raw/
 /data/capture/
+/data/prism.db
+/data/research/news_classified.json
