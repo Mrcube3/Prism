@@ -15,7 +15,7 @@ from .connectors.bitget import BitgetClient
 from .connectors.qwen import ProposedTrade
 from .repair import fetch_book, walk
 from .shadow import Frontier, PerpPosition, Scenario, ShadowResult, run_frontier, run_shadow
-from .workbench import Workbench, fetch_mmr_rate, fetch_price, perp_factor
+from .workbench import Workbench, fetch_mmr_rate, fetch_price, perp_factor, with_perp_context
 from . import wrong_way
 
 VERSION = "prism-pretrade-v0.1"
@@ -89,8 +89,8 @@ def apply_trade(client: BitgetClient, wb: Workbench, trade: ProposedTrade) -> tu
         net_size, net_dir = abs(signed), (1 if signed >= 0 else -1)
     mmr, mmr_source = fetch_mmr_rate(client, trade.instrument, net_size * mark, demo_env=demo)
     if net_size > 0:
-        positions.append(PerpPosition(trade.instrument, net_dir, net_size, mark, perp_factor(client, trade.instrument, wb.schedules, demo), mmr,
-                                      f"{mark_source}; mmr {mmr_source}"))
+        positions.append(with_perp_context(client, PerpPosition(trade.instrument, net_dir, net_size, mark, perp_factor(client, trade.instrument, wb.schedules, demo), mmr,
+                                      f"{mark_source}; mmr {mmr_source}"), demo))
     old_mm = sum((abs(p.size) * p.mark_price * (p.mmr_rate or 0) for p in wb.positions if same(p)), Decimal(0))
     new_mm = net_size * mark * (mmr or 0)
     baseline = replace(wb.baseline, effective_equity=wb.baseline.effective_equity - w.slippage_cost,

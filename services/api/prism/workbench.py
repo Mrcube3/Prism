@@ -96,6 +96,40 @@ def fetch_mmr_rate(client: BitgetClient, symbol: str, notional: Decimal, demo_en
     return None, f"{symbol}: notional outside published tiers"
 
 
+def fetch_mmr_tiers(client: BitgetClient, symbol: str, demo_env: bool = False) -> tuple[tuple[Decimal, Decimal, Decimal], ...]:
+    """Published position tiers (min value, max value, mmr) for a USDT perp; empty if unavailable."""
+    response = client.get("/api/v3/market/position-tier", {"category": "USDT-FUTURES", "symbol": symbol}, demo_env=demo_env)
+    if not response.ok or not response.data:
+        return ()
+    return tuple(sorted((Decimal(t["minTierValue"]), Decimal(t["maxTierValue"]), Decimal(t["mmr"])) for t in response.data))
+
+
+def stock_perp_anchor(client: BitgetClient, symbol: str) -> tuple[Decimal | None, str]:
+    """Frozen reference for a stock perp's underlying while the collateral reference is frozen; None when live."""
+    from datetime import timezone
+
+    from .reality.engine import Regime, last_extended_close, regime_at
+    from .reality.live import _phase, session, underlying_reference
+    from .provenance import utc_now
+
+    now = utc_now()
+    states, calendar = session(client)
+    if regime_at(now, _phase(states, now), calendar) is not Regime.FROZEN_REFERENCE:
+        return None, "reference live: stock perp shocked from its mark"
+    boundary = last_extended_close(now, calendar).astimezone(timezone.utc)
+    ref, _, _, _, source = underlying_reference(symbol[:-4], boundary)
+    return ref, (f"frozen reference ({source})" if ref is not None else "frozen reference unavailable: shocked from mark")
+
+
+def with_perp_context(client: BitgetClient, p: PerpPosition, demo_env: bool = False) -> PerpPosition:
+    """Attach published tiers and, for stock perps during a closure, the frozen-reference anchor."""
+    from dataclasses import replace
+
+    tiers = fetch_mmr_tiers(client, p.symbol, demo_env)
+    anchor, note = (stock_perp_anchor(client, p.symbol) if p.factor is Factor.RTOKEN else (None, ""))
+    return replace(p, mmr_tiers=tiers, anchor_price=anchor, mark_source=p.mark_source + (f"; {note}" if note else ""))
+
+
 def fetch_price(client: BitgetClient, category: str, symbol: str, demo_env: bool = False) -> tuple[Decimal, str]:
     response = client.get("/api/v3/market/tickers", {"category": category, "symbol": symbol}, demo_env=demo_env)
     if not response.ok or not response.data:
@@ -143,7 +177,7 @@ def judge_workbench(client: BitgetClient, fixture: dict[str, Any], tier_mode: Ti
     for p in fixture["perps"]:
         size, mark = Decimal(p["size"]), Decimal(p["mark_price"])
         mmr, mmr_source = fetch_mmr_rate(client, p["symbol"], size * mark)
-        positions.append(PerpPosition(p["symbol"], int(p["direction"]), size, mark, perp_factor(client, p["symbol"], schedules), mmr, f"{p['mark_source']}; mmr {mmr_source}"))
+        positions.append(with_perp_context(client, PerpPosition(p["symbol"], int(p["direction"]), size, mark, perp_factor(client, p["symbol"], schedules), mmr, f"{p['mark_source']}; mmr {mmr_source}")))
     eff = sum((tiered_collateral_value(h.quantity * h.price, h.schedule, tier_mode) for h in holdings if h.schedule), Decimal(0))
     mm = sum((abs(p.size) * p.mark_price * p.mmr_rate for p in positions if p.mmr_rate), Decimal(0))
     baseline = Baseline(eff, mm, "HYPOTHETICAL ACCOUNT (real Bitget prices)", "HYPOTHETICAL")
@@ -186,7 +220,7 @@ def bitget_workbench(client: BitgetClient) -> Workbench:
         if p.direction is None or p.size is None or p.mark_price is None:
             continue
         mmr, source = (p.mmr_rate, "position mmr field") if p.mmr_rate is not None else fetch_mmr_rate(client, p.symbol, abs(p.size) * p.mark_price, demo_env=demo)
-        perps.append(PerpPosition(p.symbol, p.direction, abs(p.size), p.mark_price, perp_factor(client, p.symbol, schedules, demo), mmr, source))
+        perps.append(with_perp_context(client, PerpPosition(p.symbol, p.direction, abs(p.size), p.mark_price, perp_factor(client, p.symbol, schedules, demo), mmr, source), demo))
     baseline = Baseline(snapshot.effective_equity or Decimal(0), snapshot.maintenance_margin or Decimal(0),
                         f"BITGET OBSERVED ({environment})", result.mode.value)
     notes = list(result.reasons)

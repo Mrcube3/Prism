@@ -46,6 +46,7 @@ class Cadence:
     session: int = 900
     account: int = 300
     collateral_tiers: int = 86_400
+    reality: int = 300
 
 
 @dataclass
@@ -179,6 +180,19 @@ class Collector:
             "assets": data.get("assets"),
         })
 
+    def poll_reality(self) -> None:
+        """Reality Envelopes for the watchlist: the history calibration.py and validate_reality.py learn from."""
+        import dataclasses
+
+        from ..reality.live import envelope
+
+        for symbol in self.rtokens:
+            try:
+                env = dataclasses.asdict(envelope(self.client, symbol, self.capture_root))
+                self._append("reality", {"at": utc_now().isoformat(), "symbol": symbol, "envelope": env})
+            except Exception as exc:  # recorded as a failure, never filled in
+                self._append("reality", {"at": utc_now().isoformat(), "symbol": symbol, "error": f"{type(exc).__name__}: {exc}"[:200]})
+
     def poll_collateral_tiers(self) -> None:
         response = self.client.get("/api/v3/market/discount-rate")
         self._append("collateral_tiers", {"meta": self._meta(response), "tiers": response.data if response.ok else None})
@@ -194,6 +208,7 @@ class Collector:
             ("candles", self.cadence.candles, self.poll_candles),
             ("account", self.cadence.account, self.poll_account),
             ("collateral_tiers", self.cadence.collateral_tiers, self.poll_collateral_tiers),
+            ("reality", self.cadence.reality, self.poll_reality),
         )
         for name, every, job in jobs:
             if self._due(name, every, now):

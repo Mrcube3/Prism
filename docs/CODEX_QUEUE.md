@@ -63,3 +63,13 @@ Still open (design limits, not bugs):
 - Engines #2: MM rescales linearly and ignores tier jumps (flagged as CONSERVATIVE_APPROXIMATION in every result).
 - Engines #5: stock perps share the rToken/equity axis although their marks trade 24/7.
 - Reality #1–#3, #5: proxy accuracy, hand-set thresholds and session-mixed liquidity percentiles all need closure history; revisit with the thaw experiment and M11 validation.
+
+## Follow-up fixes (2026-10-08)
+
+| Item | Resolution |
+| --- | --- |
+| Engines #2 (MM linear, ignores tiers) | **Fixed.** Each position carries Bitget's published tier table (`market/position-tier`, demo tiers for demo accounts). Shadow MM uses the rate of the tier containing the whole position value, so crossing a tier changes the rate. Linear scaling remains only as a flagged fallback when tiers are unavailable. Tests: `test_crossing_a_tier_changes_the_rate_not_just_the_notional`. |
+| Engines #5 (stock perps on the rToken axis) | **Fixed.** During a closure a stock perp's shock is measured from the frozen reference (`anchor_price`): under reopen shock r it ends at reference × (1 + r), the same end price as frozen rToken collateral, but it only moves from its current mark. With a live reference it is shocked from its mark as before. Test: `test_stock_perp_moves_only_the_remaining_gap_to_the_reopen_price`. |
+| Reality #2 (hand-set thresholds) | **Pipeline built; calibrates automatically.** Capture records Reality readings every 5 min (`reality.jsonl`). `prism/reality/calibration.py` learns AGREE (95th percentile of live rToken-vs-underlying gap, floor 10 bp) and CONFLICT (max(3 × AGREE, 99.5th percentile)) once 500 readings exist; until then envelopes say `THRESHOLDS_DEFAULT`. |
+| Reality #1 (proxy accuracy) | **Validation built; first result in.** `scripts/validate_reality.py` (hourly timer) scores reopen estimates against baselines A/B and PRISM (§49) and checks the proxy against stock-perp indices during closures. First finding: Bitget's stock-perp index is **not** frozen overnight (NVDAUSDT 29 bp, TSLAUSDT 43 bp range on 2026-10-06/07), so it cannot reveal the frozen collateral reference. The proxy can only be confirmed by the thaw experiment on a live account holding an rToken. |
+| Reality #5 (session-mixed liquidity percentiles) | Still open: needs more closure history. |

@@ -9,7 +9,17 @@ Delta model anchored to the baseline account (Bitget-observed, or a labelled hyp
     shadow_core_ratio(s)    = ShadowMM(s) / ShadowAdjustedEquity(s)
 
 `shadow_core_ratio` excludes the partial-liquidation fee term and is NOT Bitget's `mgnRatio`
-(AGENTS.md §20). Position-tier changes under shocks are ignored and flagged. No LLM is involved.
+(AGENTS.md §20). No LLM is involved.
+
+Maintenance margin per position uses Bitget's published position tiers when supplied: the rate of
+the tier the whole position value falls in (the way the position `mmr` field changed when value
+crossed a tier, observed 2026-10-07), so crossing a tier changes the rate. Without tiers the
+position's current rate is scaled linearly and the result is flagged.
+
+Stock perps trade around the clock, so during a closure their mark already reflects off-hours
+trading. Their shock is measured from `anchor_price` (the frozen reference) when one is supplied:
+under a reopen shock r the perp ends at anchor × (1 + r), the same end price as the frozen rToken
+collateral, but it only moves from its current mark to get there.
 """
 
 from __future__ import annotations
@@ -79,6 +89,20 @@ class PerpPosition:
     factor: Factor
     mmr_rate: Decimal | None
     mark_source: str
+    # Published position tiers (min value, max value, mmr), from market/position-tier.
+    mmr_tiers: tuple[tuple[Decimal, Decimal, Decimal], ...] = ()
+    # Price the factor shock is measured from (frozen reference for stock perps during a closure).
+    anchor_price: Decimal | None = None
+
+
+def tier_rate(tiers: tuple[tuple[Decimal, Decimal, Decimal], ...], notional: Decimal) -> Decimal | None:
+    """MMR of the tier containing the whole position value; beyond the last tier, the last (highest) rate."""
+    if not tiers:
+        return None
+    for lo, hi, rate in tiers:
+        if lo <= notional < hi:
+            return rate
+    return tiers[-1][2] if notional >= tiers[-1][1] else tiers[0][2]
 
 
 @dataclass(frozen=True)
@@ -173,18 +197,24 @@ def run_shadow(
     pnl = ZERO
     mm_delta = ZERO
     for p in positions:
-        new_mark = scenario.shocked(p.symbol, p.mark_price, p.factor)
+        if p.anchor_price is not None and p.symbol not in scenario.price_overrides:
+            new_mark = scenario.shocked(p.symbol, p.anchor_price, p.factor)  # end price shared with frozen collateral
+        else:
+            new_mark = scenario.shocked(p.symbol, p.mark_price, p.factor)
         d = p.direction * p.size * (new_mark - p.mark_price)
         pnl += d
         components.append(Component(p.symbol, "pnl", d))
-        if p.mmr_rate is None:
-            warnings.append(f"{p.symbol}: MMR rate unknown; maintenance margin not rescaled")
+        now_value, new_value = abs(p.size) * p.mark_price, abs(p.size) * new_mark
+        if p.mmr_tiers:
+            m = new_value * tier_rate(p.mmr_tiers, new_value) - now_value * tier_rate(p.mmr_tiers, now_value)
+        elif p.mmr_rate is not None:
+            m = (new_value - now_value) * p.mmr_rate
+            warnings.append(f"{p.symbol}: position tiers unavailable; MM scaled linearly (CONSERVATIVE_APPROXIMATION)")
         else:
-            m = abs(p.size) * (new_mark - p.mark_price) * p.mmr_rate
-            mm_delta += m
-            components.append(Component(p.symbol, "maintenance", m))
-    if positions:
-        warnings.append("Position-tier changes under the shock are ignored (CONSERVATIVE_APPROXIMATION pending tier modelling)")
+            m = ZERO
+            warnings.append(f"{p.symbol}: MMR rate unknown; maintenance margin not rescaled")
+        mm_delta += m
+        components.append(Component(p.symbol, "maintenance", m))
 
     equity = baseline.effective_equity + gap + pnl
     mm = max(baseline.maintenance_margin + mm_delta, ZERO)

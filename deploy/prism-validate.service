@@ -1,0 +1,11 @@
+# Recomputes Reality Engine validation (docs/VALIDATION.md, data/research/validation.json) from captured closures.
+[Unit]
+Description=PRISM Reality Engine validation (read-only, from captured data)
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/prism
+Nice=19
+IOSchedulingClass=idle
+ExecStart=/home/ubuntu/.local/bin/uv run --project services/api python scripts/validate_reality.py

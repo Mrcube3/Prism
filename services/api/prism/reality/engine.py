@@ -183,6 +183,10 @@ class RealityInputs:
     underlying_last: Decimal | None = None   # underlying's latest trade incl. pre/post market
     underlying_last_ts: datetime | None = None
     events: tuple[str, ...] = ()             # human-readable primary-source events in the window
+    # Agreement thresholds: hand-set defaults until calibration.py learns them from captured history.
+    agree_bps: Decimal = AGREE_BPS
+    conflict_bps: Decimal = CONFLICT_BPS
+    threshold_source: str = "DEFAULT"
 
 
 @dataclass(frozen=True)
@@ -213,6 +217,8 @@ class RealityEnvelope:
     event_support: str
     events: tuple[str, ...]
     reference_source: str
+    underlying_last: Decimal | None
+    threshold_source: str
     reason_codes: tuple[str, ...]
     assumptions: tuple[str, ...]
     sources: dict[str, str]
@@ -254,7 +260,7 @@ def build_envelope(i: RealityInputs) -> RealityEnvelope:
     if move is not None and perp_move is not None and i.reference_price:
         implied = i.reference_price * (1 + perp_move)
         gap_bps = (i.live_price / implied - 1) * 10000
-        agreement = "AGREE" if abs(gap_bps) <= AGREE_BPS else "CONFLICT" if abs(gap_bps) > CONFLICT_BPS else "DISAGREE"
+        agreement = "AGREE" if abs(gap_bps) <= i.agree_bps else "CONFLICT" if abs(gap_bps) > i.conflict_bps else "DISAGREE"
         agreement_ref = f"{i.perp_symbol} move since reference"
         reasons.append(f"REFERENCE_{agreement}_{int(gap_bps)}BPS")
     elif not frozen and live_usable and (underlying_fresh or i.perp_now):
@@ -265,7 +271,7 @@ def build_envelope(i: RealityInputs) -> RealityEnvelope:
         level_gap = (i.live_price / other - 1) * 10000
         if abs(level_gap) <= NORMALIZATION_LIMIT_BPS:
             gap_bps = level_gap
-            agreement = "AGREE" if abs(gap_bps) <= AGREE_BPS else "CONFLICT" if abs(gap_bps) > CONFLICT_BPS else "DISAGREE"
+            agreement = "AGREE" if abs(gap_bps) <= i.agree_bps else "CONFLICT" if abs(gap_bps) > i.conflict_bps else "DISAGREE"
             reasons.append(f"LIVE_REFERENCE_{agreement}_{int(gap_bps)}BPS")
         else:
             agreement = "NORMALIZATION_UNVERIFIED"
@@ -307,6 +313,7 @@ def build_envelope(i: RealityInputs) -> RealityEnvelope:
     else:
         state = MarketState.DRIFT
     reasons.append(f"STATE_{state}")
+    reasons.append(f"THRESHOLDS_{i.threshold_source}")
 
     center = _median([m for m in (move, perp_move) if m is not None])
     windows = i.closure_windows_captured
@@ -324,5 +331,6 @@ def build_envelope(i: RealityInputs) -> RealityEnvelope:
         lower_stress_bound=None, upper_stress_bound=None,
         data_support=f"closure windows {windows} ({support}); liquidity history {q_support}",
         event_support=i.event_status, events=i.events, reference_source=i.reference_source,
+        underlying_last=i.underlying_last, threshold_source=i.threshold_source,
         reason_codes=tuple(reasons + [f"EVENT_{i.event_status.split(':')[0]}"]), assumptions=ASSUMPTIONS, sources=i.sources,
     )

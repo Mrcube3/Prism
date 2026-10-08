@@ -10,6 +10,7 @@ Beam VPS `ubuntu@16.61.50.207`, project in `~/prism`, two systemd services cappe
 | --- | --- | --- |
 | `prism-capture` | Closure-window market capture ([CAPTURE.md](CAPTURE.md)) | 25% CPU, 300 MB |
 | `prism-api` | API and mission-control page on `172.18.0.1:8790` (Docker bridge only; UFW allows 172.18.0.0/16 to that port) | 50% CPU, 400 MB |
+| `prism-validate.timer` | Hourly: `scripts/validate_reality.py` updates `docs/VALIDATION.md` and `data/research/validation.json` from captured closures | oneshot, lowest priority |
 | `prism-caddy-attach.timer` | Every 5 min, re-attaches the PRISM site to Beam's Caddy if it is missing (e.g. after a Caddy restart) | oneshot |
 
 ## Public site

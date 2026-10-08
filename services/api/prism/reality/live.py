@@ -136,6 +136,8 @@ def envelope(client: BitgetClient, symbol: str, capture_root: Path) -> RealityEn
 
     liq = liquidity_history(capture_root).get(symbol, {"spread": [], "depth": []})
     ev_status, ev_items, ev_src = events_for(underlying, boundary.astimezone(timezone.utc))
+    from .calibration import thresholds
+    th = thresholds(capture_root)
     weekend = info.get("weekendTradable")
     return build_envelope(RealityInputs(
         symbol=symbol, underlying=underlying, weekend_tradable=None if weekend is None else weekend == "yes",
@@ -146,6 +148,7 @@ def envelope(client: BitgetClient, symbol: str, capture_root: Path) -> RealityEn
         closure_windows_captured=closure_windows(capture_root).get(symbol, 0),
         event_status=ev_status, events=ev_items, reference_source=ref_kind,
         underlying_last=u_last, underlying_last_ts=u_last_t,
+        agree_bps=th.agree_bps, conflict_bps=th.conflict_bps, threshold_source=th.source,
         sources={"live": f"bitget:{t.endpoint}", "book": f"bitget:{b.endpoint}", "reference_proxy": ref_src,
                  "underlying": u_src, "perp_reference": perp_src, "events": ev_src,
                  "bitget_us_data": bitget_us_data_status(),

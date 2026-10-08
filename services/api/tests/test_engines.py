@@ -166,3 +166,43 @@ def test_book_walk_vwap_and_slippage():
 def test_book_walk_reports_exhaustion():
     w = walk([[D(100), D(1)]], [[D(101), D(1)]], "sell", D(3), "X", "t")
     assert w.exhausted and w.filled == 1
+
+
+# ---- tier-aware maintenance margin and stock-perp anchors -----------------------------------
+
+from prism.shadow.engine import tier_rate  # noqa: E402
+
+TIERS = ((D(0), D(150000), D("0.004")), (D(150000), D(900000), D("0.005")), (D(900000), D(12000000), D("0.01")))
+
+
+def test_tier_rate_uses_the_tier_containing_the_whole_value():
+    assert tier_rate(TIERS, D(100000)) == D("0.004")
+    assert tier_rate(TIERS, D(150000)) == D("0.005")
+    assert tier_rate(TIERS, D(20000000)) == D("0.01")
+
+
+def test_crossing_a_tier_changes_the_rate_not_just_the_notional():
+    base = Baseline(D(100000), D(560), "H", "H")
+    pos = [PerpPosition("BTCUSDT", 1, D(2), D(70000), Factor.CRYPTO, D("0.004"), "t", mmr_tiers=TIERS)]  # 140k, tier 1
+    up = run_shadow(base, [], pos, Scenario(crypto_shock=D("0.10")))  # 154k, tier 2
+    assert up.shadow_maintenance_margin == D(560) + (D(154000) * D("0.005") - D(140000) * D("0.004"))
+    assert not any("linearly" in w for w in up.warnings)
+    linear = run_shadow(base, [], [replace_tiers(pos[0], ())], Scenario(crypto_shock=D("0.10")))
+    assert any("CONSERVATIVE_APPROXIMATION" in w for w in linear.warnings)
+
+
+def replace_tiers(p, tiers):
+    from dataclasses import replace
+    return replace(p, mmr_tiers=tiers)
+
+
+def test_stock_perp_moves_only_the_remaining_gap_to_the_reopen_price():
+    # Frozen reference 100; the perp already trades at 110 during the closure.
+    base = Baseline(D(100000), D(0), "H", "H")
+    perp = PerpPosition("NVDAUSDT", 1, D(10), D(110), Factor.RTOKEN, None, "t", anchor_price=D(100))
+    flat = run_shadow(base, [], [perp], Scenario(rtoken_shock=D(0)))  # reopen at the reference: perp falls 110 -> 100
+    assert flat.pnl_delta == D(10) * D(-10)
+    up = run_shadow(base, [], [perp], Scenario(rtoken_shock=D("0.10")))  # reopen at 110: no further move
+    assert up.pnl_delta == 0
+    live = run_shadow(base, [], [PerpPosition("NVDAUSDT", 1, D(10), D(110), Factor.RTOKEN, None, "t")], Scenario(rtoken_shock=D("0.10")))
+    assert live.pnl_delta == D(10) * D(11)  # without an anchor the shock applies from the mark

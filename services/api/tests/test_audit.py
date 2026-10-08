@@ -81,6 +81,7 @@ def test_long_does_not_net_against_short_in_hedge_mode(monkeypatch, mode, expect
     monkeypatch.setattr(pretrade, "fetch_book", lambda *a, **k: ([[D(100), D(50)]], [[D(100), D(50)]], "t"))
     monkeypatch.setattr(pretrade, "fetch_mmr_rate", lambda *a, **k: (D("0.01"), "t"))
     monkeypatch.setattr(pretrade, "perp_factor", lambda *a, **k: Factor.CRYPTO)
+    monkeypatch.setattr(pretrade, "with_perp_context", lambda client, p, demo=False: p)
     trade = ProposedTrade(instrument="BTCUSDT", category="USDT-FUTURES", direction="long", notional_usd=200, quantity=None,
                           leverage=None, timing=None, confidence="high", missing_fields=[])
     wb, *_ = pretrade.apply_trade(None, _wb(mode), trade)
